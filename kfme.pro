@@ -303,6 +303,13 @@ pro kfme_dofit, pstate
   
   xrng = max(fitobs) - min(fitobs)
   
+  ;use user-defined y range if specified
+  if (*pstate).yminmax then begin
+	 yrng = [(*pstate).yminval, (*pstate).ymaxval]
+  endif else begin
+	 yrng = [min(fitdat), max(fitdat)]
+  endelse
+  
     if (*pstate).titleflag then begin
     plttitle = (*(*pstate).pfunctargs).extitle
     endif else plttitle=''
@@ -319,7 +326,7 @@ pro kfme_dofit, pstate
 	 ;xran = minmax(fitobs), $
 	 xran  = [min(fitobs) - 0.02d * xrng, $
 	 max(fitobs) + 0.02d * xrng], $
-	 /xsty
+	 /xsty, ysty=(*pstate).yminmax, yrange = yrng
 	 ;/xstyle, xran = [min(fitobs), max(fitobs)], $
   
   if (*pstate).psym eq 8 then symsize = 1 else symsize = 1
@@ -1302,8 +1309,141 @@ pro kfme_plotdata, event
 
   ;Call the "do" routine:
   kfme_dofit, pstate
-
 end ;kfme_plotdata.pro
+
+pro kfme_plotresid, event
+
+ ; Get the pointer to the state structure from the user value
+ ; of the top-level base.
+ widget_control, event.top, get_uvalue=pstate
+ 
+  ;Ensure that the data are being plotted in the draw window:
+  wset, (*pstate).win_id
+   
+  !p.multi=[0,1,1]
+
+
+	  ;The fit for JUST RV:
+     fitobs = (*(*pstate).pcf).cf_rv.jd
+	  fitdat = (*(*pstate).pcf_resid).cf_rv.mnvel
+	  errarr = (*(*pstate).pcf).cf_rv.errvel
+
+   			 
+  ;Plot the data:
+  result = label_date(date_format=['%M %Y'], offset=2.44d6)
+  
+  if (*pstate).psplot then begin
+	 filen=nextnameeps('kfmeresidplot', '')
+	 ps_open, filen, /encaps, /color
+  endif;postscript
+  
+  rvran = max(fitobs)-min(fitobs)
+
+  ;use user-defined y range if specified
+  if (*pstate).yminmax then begin
+	 yrng = [(*pstate).yminval, (*pstate).ymaxval]
+  endif else begin
+	 yrng = [min(fitdat), max(fitdat)]
+  endelse
+  
+  plot, fitobs, fitdat, $
+	 linestyle=(*pstate).linestyle, $
+	 color = 0, psym=(*pstate).psym*(*pstate).connect, $
+	 XTickFormat='label_date', xminor=4, XTICKINTERVAL = rvran/7, $
+	 xtitle = 'Time of Observation', $
+	 ytitl='Residual Radial Velocity [m/s]', $
+	 ysty=(*pstate).yminmax, yrange = yrng
+  
+  ;Plot the data:
+  ;plot, fitobs, fitdat, $
+  ;	 linestyle=(*pstate).linestyle, $
+  ;  psym=(*pstate).psym*(*pstate).connect, color = 0
+  if (*pstate).togerr then oploterr, fitobs, fitdat, errarr, 8
+
+  fity = dblarr(n_elements(fitdat))
+  chisq = total(((fitdat-fity)/errarr)^2)/$
+	 (n_elements(fitobs) - (*pstate).ndof)
+  fity = dblarr(n_elements(fitdat))
+;stop	 
+  ;print, '# fitobs: ', n_elements(fitobs)
+  ;print, 'ndof: ', (*pstate).ndof
+	 
+  if n_elements(fitobs) le (*pstate).ndof then begin
+  xyouts, 0.6, 0.2, 'N <= n !!', $
+  /normal, color=240, charthick = 2
+  print, '******************************************'
+  print, '             !!WARNING!!                 '
+  print, 'The number of data points is less than or'
+  print, 'equal to the number of degrees of freedom!'
+  print, '******************************************'
+  ;stop
+  endif
+  
+  ;rmsresid = stddev(fitdat-fity)
+  nfree = (*pstate).ndof
+  rmsresid = sqrt(total((fitdat - fity)^2)/(n_elements(fitobs)-nfree))
+
+  if ~(*pstate).psplot then begin
+  
+	xyouts, .1, .01, 'real '+Greek('chi')+'!d'+Greek('nu')+$
+	'!u2!n'+': '+strt(chisq, f='(F9.2)'), /norm
+	;rmsresid = stddev(fitdat-fity)
+	xyouts, .4, .01, 'RMS: '+strt(rmsresid, f='(F9.2)'), /norm
+	xyouts, .7, .01, 'STDDEV RV: '+$
+	   strt(stddev((*(*pstate).pcf).cf_rv.mnvel), f='(F9.2)'), /norm
+  ;	 stop
+  endif
+  
+  if (*pstate).psplot then begin
+	 ps_close
+	  widget_control, (*pstate).controlbar.psplotbutton, set_button = 0
+	 (*pstate).psplot = 0
+  endif
+
+end ;kfme_plotresid.pro
+
+pro kfme_set_y_range, event
+
+  ;This procedure will set the y range if the Y_MINMAX button
+  ;is pressed.
+  
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.top, get_uvalue=pstate
+  
+  ;Flip the sign of the connect field:
+  (*pstate).yminmax = event.select
+  
+  ;print
+  print, 'User-defined Y range engaged?', (*pstate).yminmax
+end ;kfme_set_y_range.pro
+
+pro kfme_ymax, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.id, get_value=newpar
+  widget_control, event.top, get_uvalue=pstate
+  
+  ;change the y max value:
+  (*pstate).ymaxval = double(newpar)
+  
+  print, 'New Y max: ', newpar
+
+  ;Call the "do" routine:
+  kfme_dofit, pstate
+end;kfme_ymax.pro
+
+pro kfme_ymin, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.id, get_value=newpar
+  widget_control, event.top, get_uvalue=pstate
+  
+  ;change the y min value:
+  (*pstate).yminval = double(newpar)
+  
+  print, 'New Y min: ', newpar
+
+  ;Call the "do" routine:
+  kfme_dofit, pstate
+end;kfme_ymin.pro
 
 pro kfme_stellarmass, event
   ;Retrieve the pointer to the state structure:
@@ -1432,7 +1572,13 @@ pro kfme_aloneplot, event
   result = label_date(date_format=['%M %Y'], offset=2.44d6)
   
 
-    range = max(tfitloner) - min(tfitloner)
+	 ;use user-defined y range if specified
+	 if (*pstate).yminmax then begin
+		yrng = [(*pstate).yminval, (*pstate).ymaxval]
+	 endif else begin
+		yrng = [min(tfitloner), max(tfitloner)]
+	 endelse
+  
     loadct, 39, /silent
 if ~(*pstate).controlbar.phasebool then begin
   plot,tfine, tfitloner, $
@@ -1442,8 +1588,7 @@ if ~(*pstate).controlbar.phasebool then begin
 	xtitle = 'Time of Observation', $
 	ytitl='Radial Velocity [m/s]', $
 	symsize = 0.25, xran = minmax(tfine), /xsty, thick=9., /nodata , $
-	yrange = [min(tfitloner) - 0.25d * range, max(tfitloner) + 0.25d * range], /ysty
-	;yrange = [min(tfitloner) - 5, max(tfitloner) + 5]
+	ysty = (*pstate).yminmax, yrange=yrng
 
   oplot,tfine, tfitloner, $
 	linestyle=(*pstate).linestyle, $
@@ -1460,9 +1605,14 @@ endif else begin
   rvels = mnvels - tfitrest
   ;This section will calculate the range for the data:
   range = max(tfitloner) - min(tfitloner)
-  yrange = [min(tfitloner) - 0.25*range, max(tfitloner) + 0.5*range] > $
+  
+  ;use user-defined y range if specified
+  if (*pstate).yminmax then begin
+	 yrng = [(*pstate).yminval, (*pstate).ymaxval]
+  endif else begin
+	 yrng = [min(tfitloner) - 0.25*range, max(tfitloner) + 0.5*range] > $
            [min(rvels) - 0.25*range, max(rvels) + 0.25*range]
-  ;yrange = [min(tfitloner) - 5, max(tfitloner) + 5]
+  endelse
 
   plot,tfinph, tfitloner, $
 	linestyle=(*pstate).linestyle, $
@@ -1472,7 +1622,7 @@ endif else begin
 	ytitl='Radial Velocity [m/s]', $
 	symsize = 0.25, $
 	xran = [-0.2, 1.2], /xsty, $
-	yran = yrange, /ysty, thick=9., /nodata
+	yran = yrng, ysty=(*pstate).yminmax, thick=9., /nodata
 
   oplot,tfinph[orderedph], tfitloner[orderedph], $
 	linestyle=(*pstate).linestyle, $
@@ -3284,89 +3434,6 @@ pro kfme_restoreresid, event
  endif;cancel not selected
  
 end;kfme_restoreresid.pro
-
-pro kfme_plotresid, event
-
- ; Get the pointer to the state structure from the user value
- ; of the top-level base.
- widget_control, event.top, get_uvalue=pstate
- 
-  ;Ensure that the data are being plotted in the draw window:
-  wset, (*pstate).win_id
-   
-  !p.multi=[0,1,1]
-
-
-	  ;The fit for JUST RV:
-     fitobs = (*(*pstate).pcf).cf_rv.jd
-	  fitdat = (*(*pstate).pcf_resid).cf_rv.mnvel
-	  errarr = (*(*pstate).pcf).cf_rv.errvel
-
-   			 
-  ;Plot the data:
-  result = label_date(date_format=['%M %Y'], offset=2.44d6)
-  
-  if (*pstate).psplot then begin
-	 filen=nextnameeps('kfmeresidplot', '')
-	 ps_open, filen, /encaps, /color
-  endif;postscript
-  
-  rvran = max(fitobs)-min(fitobs)
-
-  plot, fitobs, fitdat, $
-	 linestyle=(*pstate).linestyle, $
-	 color = 0, psym=(*pstate).psym*(*pstate).connect, $
-	 XTickFormat='label_date', xminor=4, XTICKINTERVAL = rvran/7, $
-	 xtitle = 'Time of Observation', $
-	 ytitl='Residual Radial Velocity [m/s]'
-  
-  ;Plot the data:
-  ;plot, fitobs, fitdat, $
-  ;	 linestyle=(*pstate).linestyle, $
-  ;  psym=(*pstate).psym*(*pstate).connect, color = 0
-  if (*pstate).togerr then oploterr, fitobs, fitdat, errarr, 8
-
-  fity = dblarr(n_elements(fitdat))
-  chisq = total(((fitdat-fity)/errarr)^2)/$
-	 (n_elements(fitobs) - (*pstate).ndof)
-  fity = dblarr(n_elements(fitdat))
-;stop	 
-  ;print, '# fitobs: ', n_elements(fitobs)
-  ;print, 'ndof: ', (*pstate).ndof
-	 
-  if n_elements(fitobs) le (*pstate).ndof then begin
-  xyouts, 0.6, 0.2, 'N <= n !!', $
-  /normal, color=240, charthick = 2
-  print, '******************************************'
-  print, '             !!WARNING!!                 '
-  print, 'The number of data points is less than or'
-  print, 'equal to the number of degrees of freedom!'
-  print, '******************************************'
-  ;stop
-  endif
-  
-  ;rmsresid = stddev(fitdat-fity)
-  nfree = (*pstate).ndof
-  rmsresid = sqrt(total((fitdat - fity)^2)/(n_elements(fitobs)-nfree))
-
-  if ~(*pstate).psplot then begin
-  
-	xyouts, .1, .01, 'real '+Greek('chi')+'!d'+Greek('nu')+$
-	'!u2!n'+': '+strt(chisq, f='(F9.2)'), /norm
-	;rmsresid = stddev(fitdat-fity)
-	xyouts, .4, .01, 'RMS: '+strt(rmsresid, f='(F9.2)'), /norm
-	xyouts, .7, .01, 'STDDEV RV: '+$
-	   strt(stddev((*(*pstate).pcf).cf_rv.mnvel), f='(F9.2)'), /norm
-  ;	 stop
-  endif
-  
-  if (*pstate).psplot then begin
-	 ps_close
-	  widget_control, (*pstate).controlbar.psplotbutton, set_button = 0
-	 (*pstate).psplot = 0
-  endif
-
-end ;kfme_plotresid.pro
 
 pro kfme_plotps, event
 
@@ -9402,7 +9469,7 @@ pro kfme
 ;endif
  
  ;make the top level base and add resize events:
- tlb = widget_base(title = 'Interactive KFME v. 2012/01/12 ', $
+ tlb = widget_base(title = 'Interactive KFME v. 2013/09/11 ', $
  /col, xoff = x_offset, yoff = y_offset, /tlb_size_events)
  
  ;Create the top row to house the plot & buttons:
@@ -9468,7 +9535,23 @@ pro kfme
   
  plotresidbuttn = widget_button(datrow, value = 'PLOT RESIDUALS', $
  event_pro = 'kfme_plotresid', xsize=halfcol)
+
+ ;Y-RANGE ROW:
+ yranrow = widget_base(controlbase, /row)
+ ;Add a button to toggle constraining y-range:
+ yminmax = 0
+ yranstbase = widget_base(yranrow, /nonexclusive)
+ yranbutton = widget_button(yranstbase, $
+   value = 'Y_MINMAX', $
+   event_pro = 'kfme_set_y_range', XSIZE=thirdcol)
  
+ yminval = widget_text(yranrow, value = strt(1.0), $
+ 	/editable, event_pro = 'kfme_ymin', xsize = 9)
+
+ ymaxval = widget_text(yranrow, value = strt(1.0), $
+ 	/editable, event_pro = 'kfme_ymax', xsize = 9)
+
+ ;STELLAR MASS ROW:
  stellarmrow = widget_base(controlbase, /row)
  
  smasstext = widget_text(stellarmrow, value = 'M_STAR:', xsize = 9)
@@ -12194,6 +12277,9 @@ amptitle = widget_base(orbpar2, /row)
 				phasebutton:phasebutton, $
 				phasestart:phasestart, $
 				datname:datname, $
+				yranbutton:yranbutton, $
+				ymaxval:ymaxval, $
+				yminval:yminval, $
 				smassval: smassval, $
 				smassuncval:smassuncval, $
 				sradiusval:sradiusval, $
@@ -12266,6 +12352,9 @@ amptitle = widget_base(orbpar2, /row)
  			 win_id:win_id, $
  			 xmin:xmin, $
  			 xmax:xmax, $
+ 			 yminmax:yminmax, $
+ 			 yminval:yminval, $
+ 			 ymaxval:ymaxval, $
  			 zoomplot:zoomplot}
  			 ;zoomrv:zoomrv
  

@@ -19,7 +19,9 @@ datadir = datadir, $
 starlist = starlist
 
 ;ROOTDIR: This will prefix the kfmedir, outputdir and starlist:
+if file_test('/home/matt/') then begin
 rdir = '/home/matt/'
+endif else rdir = '/Users/matt/'
 
 ;KFMEDIR: The directory that contains all the KFME IDL procedures
 kfmedir = rdir+'projects/KFME/'
@@ -31,7 +33,7 @@ outputdir = rdir+'kfme_output/'
 
 ;DATADIR: When clicking the "OPEN" button in KFME to open a new 
 ;IDL save structure
-datadir = '/tous/mir3/vel/'
+datadir = '/tous/CHIRPS/vel'
 
 ;STARLIST: After the IDL save structure containing the velocities has been
 ;restored, STARLIST is a comma-delimited text file where each line represents

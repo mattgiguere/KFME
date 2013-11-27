@@ -266,6 +266,7 @@ pro kfme_dofit, pstate
   !p.multi=[0,1,1]
   !p.charsize = 2.
   !p.thick = 2.
+  !p.font=-1
 
    pararr = kfme_create_par(pstate)
 
@@ -1123,9 +1124,10 @@ pro kfme_saveall, event
   ;User select the name of the file to save to:
   newname = dialog_pickfile(filter='*.dat', title= $
   'Enter Filename to Save Everything As...', $
-  path=(*pstate).outputdir+'save_files/')
+  path=(*pstate).outputdir+'save_files/', /write)
  
   state = (*pstate)
+  print, 'Filename chosen is: ', newname
   
   save, state, filename = newname
 
@@ -2150,16 +2152,16 @@ pro kfme_fap, event
 	  endfor
 	  orbel=rv_fit_mp(scramjd,scrammnvel, scramerrvel, $
 			  yfit=syn_fit,tps=max(cffull.jd), $
-			  chi=chi_sq,rms=rms, /quiet)
+			  chi=chi,rms=rms, /quiet)
 		;stop	  
-      chiarr[j] = chi_sq
+      chiarr[j] = chi^2
 	  
 	  ;now determine the number of false alarms:
-	  fas += (chi_sq le chi_init)
+	  fas += (chi^2 le chi_init)
 	  
 	  if j mod 10 then begin
 	  print, 'the chi^2 for this realization: ', $
-	  chi_sq, '. Original: ', chi_init
+	  chi^2, '. Original: ', chi_init
 	  print, 'Percentage Complete: ', j/ntrial*1d2, ' %.', $
 	  ' FA so far: ', fas
       ;stop
@@ -2995,12 +2997,6 @@ for idxmte=0,Ntrial-1 do begin
 
     print, 'CHI SQUARED IS: ', chi_sq
     chiarr[idxmte] = chi_sq
-;stop
-;    rv_fit_old,goodcf,per=orbpar(0),parout=dum,$
-;    mstar=mst,init_tp=max(goodcf.jd),chi=chi, $
-;    frz_per = frz_per, frz_k = frz_k, frz_ecc = frz_ecc, $
-;    circle = circle, /phase, title = star
-
 
 	 outarr[*, idxmte] = orbel	
 	 ;print, orbel
@@ -3025,6 +3021,23 @@ t_duration = dblarr(ntrial, nplanets)
 
 
 for i=0, n_planets-1 do begin
+
+;set parconstraint to 1 to exclude obvious outliers, 
+;such as the case of HD 211810
+parconstraint = 1
+if parconstraint and i eq 0 then begin
+  ;use the size of newoutarr to create a new array 
+  ;excluding the outlying elements:
+  sznoa = size(newoutarr)
+  ;only keep realizations where the ecc < 0.94:
+  x = where(newoutarr[i*7 + 2,*] lt 0.94, nes)
+  ;create a new array that will have only the good values:
+  neweroutarr = dblarr(sznoa[1], nes)
+  ;now save the good values into that new array:
+  neweroutarr = newoutarr[*,x]
+  ;finally rename it to what will be used from this point on:
+  newoutarr = neweroutarr
+endif;pc & i=0
 
 medianper=strcompress(string(median(newoutarr[i*7 + 0,*])),/remove_all)
 pererr=strcompress(string(stdev(newoutarr[i*7 + 0,*])),/remove_all)
@@ -3070,6 +3083,7 @@ msini = massarr, $
 t_cen = t_center, $
 t_dur = t_duration
 
+
 mediantcen=strcompress(string(median(t_center)),/remove_all)
 
 x = where(t_center lt (mediantcen - medianper/2d), offbyper)
@@ -3086,14 +3100,15 @@ tdurerr=strcompress(string(stdev(t_duration)),/remove_all)
 
 bfk = mpf_K(a_pl, m_pl_earth, period, m_star, inc, ecc)
 
+;i is the planet number:
 case i of
-0: vals = (*pstate).pars.par1.value
-1: vals = (*pstate).pars.par2.value
-2: vals = (*pstate).pars.par3.value
-3: vals = (*pstate).pars.par4.value
-4: vals = (*pstate).pars.par5.value
-5: vals = (*pstate).pars.par6.value
-6: vals = (*pstate).pars.par7.value
+  0: vals = (*pstate).pars.par1.value
+  1: vals = (*pstate).pars.par2.value
+  2: vals = (*pstate).pars.par3.value
+  3: vals = (*pstate).pars.par4.value
+  4: vals = (*pstate).pars.par5.value
+  5: vals = (*pstate).pars.par6.value
+  6: vals = (*pstate).pars.par7.value
 endcase
 
 bfper = vals[0]
@@ -3232,7 +3247,9 @@ endfor
 loadct, 39, /silent
 plot, eccarr, karr, ps=8, xtitle='Eccentricity', $
 ytitle='K [m s!u-1!n]'
-for i=0, Ntrial - 1 do oplot, [eccarr[i], eccarr[i]], $
+
+noasz = size(newoutarr)
+for i=0, noasz[2] - 1 do oplot, [eccarr[i], eccarr[i]], $
 [karr[i],karr[i]], color=round(chiarr[i]*100d), ps=8
 
 wait, 3
@@ -3246,7 +3263,7 @@ numgrid =pargrid
 chigrid = pargrid
 meangrid = chigrid
 
-for i=0,ntrial-1 do begin
+for i=0,noasz[2]-1 do begin
   numgrid[round(eccarr[i]*xnel) +buf, floor((karr[i] )/yfac) +buf] += 1
   chigrid[round(eccarr[i]*xnel) + buf, floor((karr[i])/yfac) + buf] += $
 	 chiarr[i]
@@ -9363,7 +9380,8 @@ pro kfme
  !p.color = 0
  usersymbol, 'CIRCLE', /fill
  p_orig = !p
- kfme_init, kfmedir = kfmedir, outputdir = outputdir, datadir = datadir, starlist=starlist
+ kfme_init, kfmedir = kfmedir, outputdir = outputdir, $
+ datadir = datadir, starlist=starlist
 
  ;restore real data for the initial plot:
  cfname = 'cf1_001bl21'
@@ -9454,7 +9472,7 @@ pro kfme
 ; mon_size = rects[2:3,midx]
  
  if !version.os eq 'darwin' then begin
- x_offset = (1. - x_widget_size)/2. * mon_size[0]
+ x_offset = 0;(1. - x_widget_size)/2. * mon_size[0]
  endif else x_offset = 0
  if mon_size[0] lt 1500 then x_offset = 0 
 
@@ -9469,7 +9487,7 @@ pro kfme
 ;endif
  
  ;make the top level base and add resize events:
- tlb = widget_base(title = 'Interactive KFME v. 2013/09/11 ', $
+ tlb = widget_base(title = 'Interactive KFME v. 2013/11/12 ', $
  /col, xoff = x_offset, yoff = y_offset, /tlb_size_events)
  
  ;Create the top row to house the plot & buttons:

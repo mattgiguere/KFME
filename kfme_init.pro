@@ -33,7 +33,7 @@ outputdir = rdir+'kfme_output/'
 
 ;DATADIR: When clicking the "OPEN" button in KFME to open a new 
 ;IDL save structure
-datadir = '/tous/CHIRPS/vel'
+datadir = '/Users/matt/data/CHIRPS/rvs'
 
 ;STARLIST: After the IDL save structure containing the velocities has been
 ;restored, STARLIST is a comma-delimited text file where each line represents

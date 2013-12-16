@@ -1053,6 +1053,7 @@ pro kfme_restore_keck, newname, pstate
                      'coords', (*(*pstate).pcf).coords, $
                      'midtime', 0d, $max(cf3.jd) - min(cf3.jd), $
                      'time_offset', 0d);(*(*pstate).pcf).time_offset)
+  cf.cf_rv.mnvel = cf3.mnvel-median(cf3.mnvel)
   (*(*pstate).pcf) = cf
   (*(*pstate).pcf).cf_ast.jd *=0d
   (*pstate).xmin = min(cf3.jd)

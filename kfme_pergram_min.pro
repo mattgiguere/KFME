@@ -2,7 +2,7 @@ pro kfme_pergram_min, cf, nu_out, peri_out, pkperiods, pkheights,$
 	title=title, fap=fap, signi=signi, simsigni=simsigni, $
 	lowper=lowper, pmax=pmax, yra=yra, psdpeaksort=psdpeaksort, $
 	multiple=multiple,noise=noise, verbose=verbose, noplot=noplot, $
-	numper=numper
+	numper=numper, pergstruct=pergstruct
 ;+
 ; NAME:
 ;         scargle
@@ -255,12 +255,6 @@ if (keyword_set(numper)) then numf=numper
        END 
 
 
-;Johnjohns replacement - oddly 4x slower
-           ;; Eq. (5); sh and ch
-;           c_arr = fan(cn, numf, /trans)
-;           sh = total( c_arr * sin( om_arr * t_arr ), 2)
-;           ch = total( c_arr * cos( om_arr * t_arr ), 2)
-           
            ;; Eq. (3) ; computing the periodogram for each simulation
            psdpeak[m] = max ( (ch*cosomtau + sh*sinomtau)^2 / tc2 + $
              (sh*cosomtau - ch*sinomtau)^2 / ts2 )
@@ -327,7 +321,12 @@ if keyword_set(fap) then begin
 		endfor ;#FAP
 		;al_legend, strt(fap, f='(E10.1)'), linestyle=indgen(n_elements(fap))
 		;stop
-endif;kw(fap)
+endif else simsigni = 0;kw(fap)
+
+pergstruct = create_struct('per', 1d / nu, $
+'power', peri_out, $
+'fap_levels', fap, $
+'fap_power', simsigni)
 
 	;This factor takes care of the xyouts for a !p.multi = [0,1,3]
 	if strmid(title, 1, strlen(title)-1, /reverse_off) eq 'RA' then begin

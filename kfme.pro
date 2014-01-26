@@ -1032,7 +1032,7 @@ pro kfme_restore_keck, newname, pstate
    
   restore, newname
 
-  x = where(cf3.errvel lt 2.5*median(cf3.errvel), errct)
+  ;x = where(cf3.errvel lt 2.5*median(cf3.errvel), errct)
   ;cf3 = cf3[x]
   printjds, cf3
   
@@ -1072,15 +1072,16 @@ pro kfme_restore_keck, newname, pstate
   ;stop
   
   ;restore, '~/idl/exoidl/data/planeten.dat'
+  print, 'newname is: ', newname
   firstchar=stregex(newname, 'vst')
-  lastchar=stregex(newname, '.dat')
+  lastchar=stregex(newname, '\.dat')
   extitle=strmid(newname, firstchar+3, lastchar-firstchar-3)
   if stregex(strmid(extitle, 0,1), '[0-9]', /boolean) then begin
   extitle='HD'+extitle
   endif
   print, 'extitle is: ', extitle
   norbs = stardat(extitle, pstate=pstate)  
- ; stop
+  ;stop
   if norbs.mstar gt 0 then begin
 	 (*(*pstate).pfunctargs).m_star = norbs.mstar
 	 endif else (*(*pstate).pfunctargs).m_star = 1d
@@ -1354,7 +1355,7 @@ pro kfme_plotresid, event
 	 color = 0, psym=(*pstate).psym*(*pstate).connect, $
 	 XTickFormat='label_date', xminor=4, XTICKINTERVAL = rvran/7, $
 	 xtitle = 'Time of Observation', $
-	 ytitl='Residual Radial Velocity [m/s]', $
+	 ytitl='Residual Radial Velocity [m s!u-1!n]', $
 	 ysty=(*pstate).yminmax, yrange = yrng
   
   ;Plot the data:
@@ -1589,7 +1590,7 @@ if ~(*pstate).controlbar.phasebool then begin
 	color = 0., psym=(*pstate).psym*(*pstate).connect, $
 	XTickFormat='label_date', xminor=4, XTICKINTERVAL = rvran/4, $
 	xtitle = 'Time of Observation', $
-	ytitl='Radial Velocity [m/s]', $
+	ytitl='Radial Velocity [m s!u-1!n]', $
 	symsize = 0.25, xran = minmax(tfine), /xsty, thick=9., /nodata , $
 	ysty = (*pstate).yminmax, yrange=yrng
 
@@ -1622,7 +1623,7 @@ endif else begin
 	color = 0, psym=(*pstate).psym*(*pstate).connect, $
 	xminor=4, $
 	xtitle = 'Orbital Phase', $
-	ytitl='Radial Velocity [m/s]', $
+	ytitl='Radial Velocity [m s!u-1!n]', $
 	symsize = 0.25, $
 	xran = [-0.2, 1.2], /xsty, $
 	yran = yrng, ysty=(*pstate).yminmax, thick=9., /nodata
@@ -1798,7 +1799,10 @@ pro kfme_pergram, event
   kfme_pergram_min, (*(*pstate).pcf).cf_rv, $
   /verbose, lowper=(*pstate).perglow, pmax=(*pstate).perghi, $
   numper=(*pstate).pergres, title = pergtitle, $
-  fap = fap, multiple=multiple, simsigni = simsigni
+  fap = fap, multiple=multiple, simsigni = simsigni, $
+  pergstruct=pergstruct
+  ;uncomment this stop if you want to save the periodogram information
+  ;STOP
   
   if (*pstate).psplot then begin
 	 ps_close
@@ -1842,7 +1846,10 @@ pro kfme_residpergram, event
   kfme_pergram_min, (*(*pstate).pcf_resid).cf_rv, $
   /verbose, lowper=(*pstate).perglow, pmax=(*pstate).perghi, $
   numper=(*pstate).pergres, title = pergtitle, $
-  fap = fap, multiple=multiple, simsigni = simsigni
+  fap = fap, multiple=multiple, simsigni = simsigni, $
+  pergstruct=pergstruct
+  ;uncomment this stop if you want to save the periodogram information
+  ;STOP
   
   if (*pstate).psplot then begin
 	 ps_close
@@ -2936,6 +2943,9 @@ orbel[7*indx+4] = k ;k
 orbel[5] = orbpar[5*n_planets];gam
 orbel[6] = orbpar[5*n_planets+1];dvdt
 
+;store the best-fit solution:
+orbel_bf = orbel
+
 fixed=dblarr(n_planets*7)
 fixed[7*indx] = pararr[5*indx].fixed
 fixed[7*indx+1] = pararr[5*indx+4].fixed
@@ -2990,6 +3000,9 @@ for idxmte=0,Ntrial-1 do begin
 	print, '*********************************************************'
 	print, 'Now on run:', idxmte,' of ',strt(ntrial),' in MONTE_NEW.PRO'
 	print, '*********************************************************'
+	;set the starting guess back to the best-fit solution:
+	orbel = orbel_bf
+	
     fitdat=new_vel[*,idxmte]
     err=new_err[*,idxmte]
 	 orbel=rv_fit_mp(fitobs,fitdat, err, fixed=fixed, $
@@ -3019,26 +3032,35 @@ t_center = dblarr(ntrial, nplanets)
 t_duration = dblarr(ntrial, nplanets)
 
 
-
-
-for i=0, n_planets-1 do begin
-
 ;set parconstraint to 1 to exclude obvious outliers, 
 ;such as the case of HD 211810
 parconstraint = 1
-if parconstraint and i eq 0 then begin
+if parconstraint then begin
   ;use the size of newoutarr to create a new array 
   ;excluding the outlying elements:
   sznoa = size(newoutarr)
+  ;IDL> print, sznoa
+  ;         2          14        1000           4       14000
+  ;create an incrementing array the size of the # of realizations 
+  ;for indexing:
+  gdels = lindgen(sznoa[2])
   ;only keep realizations where the ecc < 0.94:
-  x = where(newoutarr[i*7 + 2,*] lt 0.94, nes)
+  for ii=0, n_planets-1 do begin
+	;cycle through each planet, removing the realizations
+	;where any one of the planets has an e > that desired:
+	gdels = where(newoutarr[ii*7 + 2,gdels] lt 0.94, nes)
+  endfor
   ;create a new array that will have only the good values:
   neweroutarr = dblarr(sznoa[1], nes)
-  ;now save the good values into that new array:
-  neweroutarr = newoutarr[*,x]
+  ;now save the good elements into that new array:
+  neweroutarr = newoutarr[*,gdels]
   ;finally rename it to what will be used from this point on:
   newoutarr = neweroutarr
+  print, 'Number of realizations discarded: ', sznoa[2]-nes
+  print, 'Fraction of realizations remaining: ', double(nes)/sznoa[2]
 endif;pc & i=0
+
+for i=0, n_planets-1 do begin
 
 medianper=strcompress(string(median(newoutarr[i*7 + 0,*])),/remove_all)
 pererr=strcompress(string(stdev(newoutarr[i*7 + 0,*])),/remove_all)

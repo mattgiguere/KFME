@@ -316,6 +316,7 @@ pro kfme_dofit, pstate
     endif else plttitle=''
   
 
+  if n_elements(fitobs) gt 1 then begin
   plot, fitobs, fitdat, $
 	 linestyle=(*pstate).linestyle, $
 	 color = 0, psym=(*pstate).psym*(*pstate).connect, $
@@ -422,6 +423,13 @@ endif
 	  widget_control, (*pstate).controlbar.psplotbutton, set_button = 0
 	 (*pstate).psplot = 0
   endif
+
+  endif else begin
+  ;fitobs is less than 2 (can't plot)
+  plot, findgen(50), /nodata
+  xyouts, 0.5, 0.5, 'Decrease zoom level', /normal
+  endelse
+
 
 end;kfme_dofit.pro
 
@@ -1111,6 +1119,172 @@ pro kfme_restore_keck, newname, pstate
   print, 'File '+newname+' Restored.'
   
 end ;kfme_restore_keck.pro
+
+pro kfme_importtxt, event
+  ; Get the pointer to the state structure from the user value
+  ; of the top-level base.
+  widget_control, event.top, get_uvalue=pstate
+
+  ;User select the name of the residuals to restore:
+  newname = dialog_pickfile(/read, filter='**.txt', title= $
+  'Enter Filename to Restore...', $
+  path=(*pstate).datadir)
+  
+  if newname ne '' then begin ;the CASE where CANCEL is clicked
+   
+  readcol, newname, jd, mnvel, errvel, $
+  	delimiter=(*pstate).import_delimiter, $
+  	skipline=(*pstate).import_skiplines, f='D, D, D'
+  
+  jd += double((*pstate).import_jdoff)
+  jd -= 2.44d6
+  if (*pstate).import_rvunit eq 'kms' then mnvel *= 1d3
+  if (*pstate).import_errunit eq 'kms' then errvel *= 1d3
+  
+  cfi = create_struct('jd', 0d, $
+  	'mnvel', 0d, $
+  	'errvel', 0d, $
+  	'dewar', 0d)
+  cf3 = replicate(cfi, n_elements(jd))
+  cf3.jd = jd
+  cf3.mnvel = mnvel - median(mnvel)
+  cf3.errvel = errvel
+  cf3.dewar = intarr(n_elements(jd))
+
+  ;x = where(cf3.errvel lt 2.5*median(cf3.errvel), errct)
+  ;cf3 = cf3[x]
+  printjds, cf3
+  
+  print, '# of Observations: ', n_elements(cf3)
+  ;stop
+  ;velplot, cf3, '', 4./24., dates, speed, errv, cai, nav, bincf, /noplot
+  ;cf3=bincf
+  ;stop
+  ;if max(cf3.jd) lt 2.44d6 then cf3.jd += 2.44d6
+	loadct, 39, /silent
+	!p = (*pstate).p_orig
+  
+  cf = create_struct('cf_ast', (*(*pstate).pcf).cf_ast, $
+                     'cf_rv', cf3, $
+                     'm_star', 1d, $
+                     'plx', (*(*pstate).pcf).plx, $
+                     'prpr', (*(*pstate).pcf).prpr, $
+                     'coords', (*(*pstate).pcf).coords, $
+                     'midtime', 0d, $max(cf3.jd) - min(cf3.jd), $
+                     'time_offset', 0d);(*(*pstate).pcf).time_offset)
+  cf.cf_rv.mnvel = cf3.mnvel-median(cf3.mnvel)
+  (*(*pstate).pcf) = cf
+  (*(*pstate).pcf).cf_ast.jd *=0d
+  (*pstate).xmin = min(cf3.jd)
+  (*pstate).xmax = max(cf3.jd)
+  (*(*pstate).pcfname) = newname
+  printjds, cf3
+  print, '# of Observations Restored: ', n_elements(cf3)
+  
+  dew24 = where(cf3.dewar eq 24)
+  ;pdew24 = ptr_new(dew24, /no_copy, /allocate)
+  dew39 = where(cf3.dewar eq 39)
+  ;pdew39 = ptr_new(dew39, /no_copy, /allocate)
+
+  (*(*(*pstate).pfunctargs).dew24) = dew24
+  (*(*(*pstate).pfunctargs).dew39) = dew39
+  ;stop
+  
+  ;restore, '~/idl/exoidl/data/planeten.dat'
+  print, 'newname is: ', newname
+  firstchar=stregex(newname, 'vst')
+  lastchar=stregex(newname, '\.dat')
+  extitle=strmid(newname, firstchar+3, lastchar-firstchar-3)
+  if stregex(strmid(extitle, 0,1), '[0-9]', /boolean) then begin
+  extitle='HD'+extitle
+  endif
+  print, 'extitle is: ', extitle
+  norbs = stardat(extitle, pstate=pstate)  
+  ;stop
+  if norbs.mstar gt 0 then begin
+	 (*(*pstate).pfunctargs).m_star = norbs.mstar
+	 endif else (*(*pstate).pfunctargs).m_star = 1d
+	 (*(*pstate).pfunctargs).rstar = norbs.knownstarrad
+	 (*(*pstate).pfunctargs).extitle=extitle
+	 (*pstate).ndof = 5d
+;stop
+	 widget_control, (*pstate).controlbar.smassval, $
+	 set_value=strt(norbs.mstar)
+	 widget_control, (*pstate).controlbar.smassuncval, $
+	 set_value=strt(norbs.unc_mstar)
+	 widget_control, (*pstate).controlbar.sradiusval, $
+	 set_value=strt(norbs.knownstarrad)
+	 widget_control, (*pstate).controlbar.sradiusuncval, $
+	 set_value=strt(norbs.unc_rstar)
+
+  endif;IF CANCEL NOT CLICKED, DO THE ABOVE
+  
+  
+  ;Update all the fields and plot:    
+  kfme_update_fields, pstate
+
+  ;Save the pointer to the state structure:
+;  widget_control, event.top, set_uvalue=pstate
+   ;stop
+
+  print, 'File '+newname+' Restored.'
+  
+end ;kfme_importtxt.pro
+
+pro kfme_importdelimiter, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.id, get_value=newpar
+  widget_control, event.top, get_uvalue=pstate
+  
+  ;change the y max value:
+  (*pstate).import_delimiter = newpar
+  
+  print, 'New delimiter for importing data: ', newpar
+end;kfme_importtxt.pro
+
+pro kfme_importskiplines, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.id, get_value=newpar
+  widget_control, event.top, get_uvalue=pstate
+  
+  ;change the y max value:
+  (*pstate).import_skiplines = strt(newpar)
+  
+  print, 'New # lines to skip when importing data: ', newpar
+end;kfme_importskiplines.pro
+
+pro kfme_importjdoff, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.id, get_value=newpar
+  widget_control, event.top, get_uvalue=pstate
+  
+  ;change the y max value:
+  (*pstate).import_jdoff = strt(newpar)
+  
+  print, 'New BJD Offset when importing data: ', newpar
+end;kfme_importjdoff.pro
+
+pro kfme_importrvunit, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.id, get_value=newpar
+  widget_control, event.top, get_uvalue=pstate
+  
+  ;change the y max value:
+  (*pstate).import_rvunit = strt(newpar)
+  
+  print, 'New RV unit when importing data: ', newpar
+end;kfme_importrvunit.pro
+
+pro kfme_importerrunit, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.id, get_value=newpar
+  widget_control, event.top, get_uvalue=pstate
+  
+  ;change the y max value:
+  (*pstate).import_errunit = strt(newpar)
+  
+  print, 'New RV unit when importing data: ', newpar
+end;kfme_importerrunit.pro
 
 pro kfme_saveall, event
   ; Get the pointer to the state structure from the user value
@@ -9510,7 +9684,7 @@ pro kfme
 ;endif
  
  ;make the top level base and add resize events:
- tlb = widget_base(title = 'Interactive KFME v. 2013/11/12 ', $
+ tlb = widget_base(title = 'Interactive KFME v. 2014/02/17 ', $
  /col, xoff = x_offset, yoff = y_offset, /tlb_size_events)
  
  ;Create the top row to house the plot & buttons:
@@ -9556,6 +9730,40 @@ pro kfme
 ; orbitrow = widget_base(controlbase, /row)
  savresid = widget_button(telrow, value = 'PLOT ORBIT', $
  event_pro = 'kfme_plotorbit', XSIZE=halfcol)
+ 
+ importrow = widget_base(controlbase, /row)
+ 
+ importtxt = widget_button(importrow, value = 'IMPORT TXT', $
+ event_pro = 'kfme_importtxt',xsize=thirdcol)
+ 
+ import_delimiter = ','
+ importdelimbox = widget_text(importrow, value = import_delimiter, $
+ 	/editable, event_pro = 'kfme_importdelimiter', xsize = 8)
+
+ import_skiplines = strt(2)
+ importskipbox = widget_text(importrow, value = import_skiplines, $
+ 	/editable, event_pro = 'kfme_importskiplines', xsize = 8)
+
+ importrow2 = widget_base(controlbase, /row)
+ 
+ ;the offset for the observation times from BJD:
+ import_jdoff = '2450000'
+ importjdoffbox = widget_text(importrow2, value = import_jdoff, $
+ 	/editable, event_pro = 'kfme_importjdoff', xsize = 8)
+
+ import_rvunit = 'kms'
+ importrvunitbox = widget_text(importrow2, value = import_rvunit, $
+ 	/editable, event_pro = 'kfme_importrvunit', xsize = 8)
+
+ import_errunit = 'kms'
+ importerrunitbox = widget_text(importrow2, value = import_errunit, $
+ 	/editable, event_pro = 'kfme_importerrunit', xsize = 8)
+
+ import_jdoff = '2450000'
+ importdelimbox = widget_text(importrow2, value = import_jdoff, $
+ 	/editable, event_pro = 'kfme_importjdoff', xsize = 8)
+
+ 
  
  savrow = widget_base(controlbase, /row)
 
@@ -12352,6 +12560,11 @@ amptitle = widget_base(orbpar2, /row)
  			 fixbttns:fixbttns, $
  			 fitplarr:fitplarr, $
  			 fitplbttns:fitplbttns, $
+ 			 import_delimiter:import_delimiter, $
+ 			 import_errunit:import_errunit, $
+ 			 import_jdoff:import_jdoff, $
+ 			 import_rvunit:import_rvunit, $
+ 			 import_skiplines:import_skiplines, $
  			 jitternum:jitternum, $
  			 kfmedir:kfmedir, $
  			 linestyle:0, $

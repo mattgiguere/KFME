@@ -1151,18 +1151,9 @@ pro kfme_importtxt, event
   cf3.errvel = errvel
   cf3.dewar = intarr(n_elements(jd))
 
-  ;x = where(cf3.errvel lt 2.5*median(cf3.errvel), errct)
-  ;cf3 = cf3[x]
   printjds, cf3
   
   print, '# of Observations: ', n_elements(cf3)
-  ;stop
-  ;velplot, cf3, '', 4./24., dates, speed, errv, cai, nav, bincf, /noplot
-  ;cf3=bincf
-  ;stop
-  ;if max(cf3.jd) lt 2.44d6 then cf3.jd += 2.44d6
-	loadct, 39, /silent
-	!p = (*pstate).p_orig
   
   cf = create_struct('cf_ast', (*(*pstate).pcf).cf_ast, $
                      'cf_rv', cf3, $
@@ -1177,37 +1168,25 @@ pro kfme_importtxt, event
   (*(*pstate).pcf).cf_ast.jd *=0d
   (*pstate).xmin = min(cf3.jd)
   (*pstate).xmax = max(cf3.jd)
-  (*(*pstate).pcfname) = newname
-  printjds, cf3
-  print, '# of Observations Restored: ', n_elements(cf3)
-  
+  read, 'Enter the name of the star: ', (*(*pstate).pcfname)
+  extitle = (*(*pstate).pcfname)
+
   dew24 = where(cf3.dewar eq 24)
-  ;pdew24 = ptr_new(dew24, /no_copy, /allocate)
   dew39 = where(cf3.dewar eq 39)
-  ;pdew39 = ptr_new(dew39, /no_copy, /allocate)
 
   (*(*(*pstate).pfunctargs).dew24) = dew24
   (*(*(*pstate).pfunctargs).dew39) = dew39
-  ;stop
   
-  ;restore, '~/idl/exoidl/data/planeten.dat'
-  print, 'newname is: ', newname
-  firstchar=stregex(newname, 'vst')
-  lastchar=stregex(newname, '\.dat')
-  extitle=strmid(newname, firstchar+3, lastchar-firstchar-3)
-  if stregex(strmid(extitle, 0,1), '[0-9]', /boolean) then begin
-  extitle='HD'+extitle
-  endif
   print, 'extitle is: ', extitle
   norbs = stardat(extitle, pstate=pstate)  
-  ;stop
+
   if norbs.mstar gt 0 then begin
 	 (*(*pstate).pfunctargs).m_star = norbs.mstar
 	 endif else (*(*pstate).pfunctargs).m_star = 1d
 	 (*(*pstate).pfunctargs).rstar = norbs.knownstarrad
 	 (*(*pstate).pfunctargs).extitle=extitle
 	 (*pstate).ndof = 5d
-;stop
+
 	 widget_control, (*pstate).controlbar.smassval, $
 	 set_value=strt(norbs.mstar)
 	 widget_control, (*pstate).controlbar.smassuncval, $
@@ -1340,9 +1319,14 @@ pro kfme_restoreall, event
  			 fapiter:state.fapiter, $
  			 fixbttns:(*pstate).fixbttns, $
  			 fitplarr:state.fitplarr, $
+ 			 fitplbttns:state.fitplbttns, $
+ 			 import_delimiter:(*pstate).import_delimiter, $
+ 			 import_errunit:(*pstate).import_errunit, $
+ 			 import_jdoff:(*pstate).import_jdoff, $
+ 			 import_rvunit:(*pstate).import_rvunit, $
+ 			 import_skiplines:(*pstate).import_skiplines, $
  			 jitternum:state.jitternum, $
  			 kfmedir:state.kfmedir, $
- 			 fitplbttns:(*pstate).fitplbttns, $
  			 linestyle:state.linestyle, $
  			 multith:state.multith, $
  			 outputdir:state.outputdir, $
@@ -1381,6 +1365,9 @@ pro kfme_restoreall, event
  			 win_id:(*pstate).win_id, $
  			 xmin:state.xmin, $
  			 xmax:state.xmax, $
+ 			 yminmax:(*pstate).yminmax, $
+ 			 yminval:(*pstate).yminval, $
+ 			 ymaxval:(*pstate).ymaxval, $
  			 zoomplot:state.zoomplot}
 
   pstate = ptr_new(state, /no_copy, /allocate)
@@ -3206,9 +3193,17 @@ t_center = dblarr(ntrial, nplanets)
 t_duration = dblarr(ntrial, nplanets)
 
 
+
+;******************************************************************************
+;THIS IS THE SECTION FOR PUTTING CUTS ON THE REALIZATIONS
+;CHANGE THE GDELS WHERE STATEMENT TO CHANGE WHICH "GOOD ELEMENTS"
+;YOU WANT TO KEEP.
+;SET PARCONSTRAINT TO 1 TO USE ONLY THE GOOD ELEMENTS
+;PARCONSTRAINT = 0: USE ALL ELEMENTS
+;******************************************************************************
 ;set parconstraint to 1 to exclude obvious outliers, 
 ;such as the case of HD 211810
-parconstraint = 1
+parconstraint = 0
 if parconstraint then begin
   ;use the size of newoutarr to create a new array 
   ;excluding the outlying elements:
@@ -3222,7 +3217,7 @@ if parconstraint then begin
   for ii=0, n_planets-1 do begin
 	;cycle through each planet, removing the realizations
 	;where any one of the planets has an e > that desired:
-	gdels = where(newoutarr[ii*7 + 2,gdels] lt 0.94, nes)
+	gdels = where(newoutarr[ii*7 + 2,gdels] lt 0.9 and chiarr lt 3.*(*pstate).chisq, nes)
   endfor
   ;create a new array that will have only the good values:
   neweroutarr = dblarr(sznoa[1], nes)
@@ -3553,7 +3548,7 @@ levels=levels2
  YTICKFORMAT=format, XTICKFORMAT='(A1)', YTICKLEN=ticklen, $
  YRANGE=[minrange, maxrange], FONT=font, YMinor=minor, _STRICT_EXTRA=extra, $
  YTICKNAME=ticknames, YLOG=ylog, XTITLE="", YTITLE=ytitle
-
+stop
 end;kfme_monte2.pro
 
 pro kfme_saveresid, event

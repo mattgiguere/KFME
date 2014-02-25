@@ -87,11 +87,13 @@ endif
 time_stamp = jul2cal(systime(/julian), /dashn)
  pcfname=(*(*pstate).pcfname)
 
- firstchar=stregex(pcfname, 'vst')
- lastchar=stregex(pcfname, '.dat')
- extitle=strmid(pcfname, firstchar+3, lastchar-firstchar-3)
+ ;if the filename is a vst structure name, then chop off the beginning and end
+ if strmatch(pcfname, '*vst*') then begin
+	firstchar=stregex(pcfname, 'vst')
+	lastchar=stregex(pcfname, '.dat')
+	extitle=strmid(pcfname, firstchar+3, lastchar-firstchar-3)
+ endif else extitle = pcfname
  print, 'extitle is: ', extitle
- ;stop
 
 if ~keyword_set(extitle) then begin
 read, 'Please enter the name of the star: ', extitle
@@ -1386,7 +1388,7 @@ if n_planets ge 7 then begin
 	
   printf, fnum, '\def\orbperh'+first3+'{$'+strt(p7str1)+'$}'
   p7str2 = '\orbperh'+first3
-  printf, fnum, '\def\orbperunch'+first3+'{$'+strt(punc7str1)+'$}'
+  printf, fnum, '\def\orbperunch'+first3+'{$'+strt(punc7str1, f='(F15.3)')+'$}'
   punc7str2 = '\orbperunch'+first3
   
   printf, fnum, '\def\orbtph'+first3+'{$'+strt(Tp7str1)+'$}'

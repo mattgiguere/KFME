@@ -9691,7 +9691,7 @@ pro kfme
 ;endif
  
  ;make the top level base and add resize events:
- tlb = widget_base(title = 'Interactive KFME v. 2014/02/17 ', $
+ tlb = widget_base(title = 'Interactive KFME v. 2014/02/26 ', $
  /col, xoff = x_offset, yoff = y_offset, /tlb_size_events)
  
  ;Create the top row to house the plot & buttons:

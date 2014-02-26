@@ -1141,6 +1141,8 @@ pro kfme_importtxt, event
   if (*pstate).import_rvunit eq 'kms' then mnvel *= 1d3
   if (*pstate).import_errunit eq 'kms' then errvel *= 1d3
   
+  
+  
   cfi = create_struct('jd', 0d, $
   	'mnvel', 0d, $
   	'errvel', 0d, $
@@ -4692,23 +4694,33 @@ pro kfme_fitplnum, event
   ; of the top-level base.
   widget_control, event.top, get_uvalue=pstate
   widget_control, event.id, get_value=val
-  
+
   ;set the appropriate planet:
-  case val of
-	'FIT PLANET 1 ': (*pstate).fitplarr[0] = event.select
-	'FIT PLANET 2 ': (*pstate).fitplarr[1] = event.select
-	'FIT PLANET 3 ': (*pstate).fitplarr[2] = event.select
-	'FIT PLANET 4 ': (*pstate).fitplarr[3] = event.select
-	'FIT PLANET 5 ': (*pstate).fitplarr[4] = event.select
-	'FIT PLANET 6 ': (*pstate).fitplarr[5] = event.select
-	'FIT PLANET 7 ': (*pstate).fitplarr[6] = event.select
+  case strt(val) of
+	'FIT PLANET 1': (*pstate).fitplarr[0] = event.select
+	'FIT PLANET 2': (*pstate).fitplarr[1] = event.select
+	'FIT PLANET 3': (*pstate).fitplarr[2] = event.select
+	'FIT PLANET 4': (*pstate).fitplarr[3] = event.select
+	'FIT PLANET 5': (*pstate).fitplarr[4] = event.select
+	'FIT PLANET 6': (*pstate).fitplarr[5] = event.select
+	'FIT PLANET 7': (*pstate).fitplarr[6] = event.select
+	'FIT TRENDS': (*pstate).pars.par1[5:9].fixed = ~(event.select)
   endcase;val
+  print, 'Set to '+val+' : '+strt(event.select)
   
   (*(*pstate).pfunctargs).n_planets = total((*pstate).fitplarr)
   ;print, (*pstate).fitplarr
-
-  ;Call the "fit" routine:
-  kfme_dofit, pstate
+  
+  if total((*pstate).fitplarr) eq 0 then begin
+     print, 'STOP! You must fit at least one planet!'
+     print, 'Type .c to continue and set at least'
+     print, 'one planet free before proceeding'
+     print, 'any further.'
+     stop
+  endif else begin
+	 ;Call the "fit" routine:
+	 kfme_dofit, pstate
+  endelse
   
 end;kfme_fit1.pro
 
@@ -10093,10 +10105,9 @@ tfinebutton = widget_button(tfinebase, $
  
  widget_control, fitpar1bttn, /set_button
 
- resetbtn1 = widget_button(planetcontrolbase,value = 'RESET PARAMETERS',event_pro = 'kfme_resetparam', xsize = 120)
+ resetbtn1 = widget_button(planetcontrolbase,value = 'RESET PARAMETERS',$
+ 	event_pro = 'kfme_resetparam', xsize = 120)
  ;***************TABSTUFF************************************
-
-
 
  ;This button just shows which planet it is:
  red_image = BYTARR(6, 170, 3)
@@ -10390,7 +10401,7 @@ amptitle = widget_base(orbpar2, /row)
  fitpar2bttn = widget_button(fitplanetbase, value = 'FIT PLANET 2 ', $
         event_pro = 'kfme_fitplnum')
  
- widget_control, fitpar2bttn, /set_button
+ widget_control, fitpar2bttn
 
  resetbtn2 = widget_button(planetcontrolbase,value = 'RESET PARAMETERS',event_pro = 'kfme_resetparam', xsize = 120)
  ;***************TABSTUFF************************************
@@ -10667,7 +10678,7 @@ amptitle = widget_base(orbpar2, /row)
  fitpar3bttn = widget_button(fitplanetbase, value = 'FIT PLANET 3 ', $
         event_pro = 'kfme_fitplnum')
  
- widget_control, fitpar3bttn, /set_button
+ widget_control, fitpar3bttn
 
  resetbtn3 = widget_button(planetcontrolbase,value = 'RESET PARAMETERS',event_pro = 'kfme_resetparam', xsize = 120)
  ;***************TABSTUFF************************************
@@ -10944,7 +10955,7 @@ amptitle = widget_base(orbpar2, /row)
  fitpar4bttn = widget_button(fitplanetbase, value = 'FIT PLANET 4 ', $
         event_pro = 'kfme_fitplnum')
  
- widget_control, fitpar4bttn, /set_button
+ widget_control, fitpar4bttn
 
  resetbtn4 = widget_button(planetcontrolbase,value = 'RESET PARAMETERS',event_pro = 'kfme_resetparam', xsize = 120)
  ;***************TABSTUFF************************************
@@ -11220,7 +11231,7 @@ amptitle = widget_base(orbpar2, /row)
  fitpar5bttn = widget_button(fitplanetbase, value = 'FIT PLANET 5 ', $
         event_pro = 'kfme_fitplnum')
  
- widget_control, fitpar5bttn, /set_button
+ widget_control, fitpar5bttn
 
  resetbtn5 = widget_button(planetcontrolbase,value = 'RESET PARAMETERS',event_pro = 'kfme_resetparam', xsize = 120)
  ;***************TABSTUFF************************************
@@ -11497,7 +11508,7 @@ amptitle = widget_base(orbpar2, /row)
  fitpar6bttn = widget_button(fitplanetbase, value = 'FIT PLANET 6 ', $
         event_pro = 'kfme_fitplnum')
  
- widget_control, fitpar6bttn, /set_button
+ widget_control, fitpar6bttn
 
  resetbtn6 = widget_button(planetcontrolbase,value = 'RESET PARAMETERS',event_pro = 'kfme_resetparam', xsize = 120)
  ;***************TABSTUFF************************************
@@ -11775,7 +11786,7 @@ amptitle = widget_base(orbpar2, /row)
  fitpar7bttn = widget_button(fitplanetbase, value = 'FIT PLANET 7 ', $
         event_pro = 'kfme_fitplnum')
  
- widget_control, fitpar7bttn, /set_button
+ widget_control, fitpar7bttn
 
  resetbtn7 = widget_button(planetcontrolbase,value = 'RESET PARAMETERS',event_pro = 'kfme_resetparam', xsize = 120)
  ;***************TABSTUFF************************************

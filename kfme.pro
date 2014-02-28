@@ -9584,8 +9584,13 @@ pro kfme
  !p.color = 0
  usersymbol, 'CIRCLE', /fill
  p_orig = !p
- kfme_init, kfmedir = kfmedir, outputdir = outputdir, $
- datadir = datadir, starlist=starlist
+ kfme_init, kfmedir = kfmedir, $
+ 	outputdir = outputdir, $
+ 	datadir = datadir, $
+ 	starlist=starlist, $
+ 	winszx = winszx, $
+ 	winszy = winszy, $
+ 	
 
  ;restore real data for the initial plot:
  cfname = 'cf1_001bl21'
@@ -9656,8 +9661,8 @@ pro kfme
   pdatls = ptr_new(BLIND21, /no_copy, /allocate)
   
  ;The percentage of the screen you want the widget to take up:
- y_widget_size = 0.95
- x_widget_size = 0.95
+ y_widget_size = winszy
+ x_widget_size = winszx
  
    ; Get Monitor information
    oInfo = OBJ_NEW('IDLsysMonitorInfo')
@@ -9691,7 +9696,7 @@ pro kfme
 ;endif
  
  ;make the top level base and add resize events:
- tlb = widget_base(title = 'Interactive KFME v. 2014/02/26 ', $
+ tlb = widget_base(title = 'Interactive KFME v. 2014/02/28 ', $
  /col, xoff = x_offset, yoff = y_offset, /tlb_size_events)
  
  ;Create the top row to house the plot & buttons:

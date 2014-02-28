@@ -29,11 +29,19 @@ kfmedir = rdir+'projects/KFME/'
 ;	plots, tables, IDL save structures)
 outputdir = rdir+'kfme_output/'
 
-
 ;DATADIR: When clicking the "OPEN" button in KFME to open a new 
 ;IDL save structure
 ;datadir = '/Users/matt/data/CHIRPS/rvs'
 datadir = '/Users/matt/projects/OTHER/N2K/PAPER2/data'
+
+;WINSZ: Adjust the KFME window size. Use the fraction of your display:
+winszx = 0.95
+winszy = 0.95
+
+;WINOFF: Adjust the X and Y offsets of the KFME window
+winoffx = 0
+winoffy = 0
+
 
 ;STARLIST: After the IDL save structure containing the velocities has been
 ;restored, STARLIST is a comma-delimited text file where each line represents

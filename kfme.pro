@@ -4722,7 +4722,28 @@ pro kfme_fitplnum, event
 	 kfme_dofit, pstate
   endelse
   
-end;kfme_fit1.pro
+end;kfme_fitplnum.pro
+
+pro kfme_resetparam, event
+  ; Get the pointer to the state structure from the user value
+  ; of the top-level base.
+  widget_control, event.top, get_uvalue=pstate
+  widget_control, event.id, get_value=val
+
+  upordowncheckbox = event.select
+  print, 'val is: ', val
+  print, 'event.select is: ', event.select
+  
+  print, 'This routine is under construction.'
+  print, 'Type ".c" to continue'
+  stop
+
+
+  ;Call the "fit" routine:
+  kfme_dofit, pstate
+
+  
+end;kfme_resetparam.pro
 
 
 
@@ -9584,12 +9605,15 @@ pro kfme
  !p.color = 0
  usersymbol, 'CIRCLE', /fill
  p_orig = !p
- kfme_init, kfmedir = kfmedir, $
- 	outputdir = outputdir, $
+ kfme_init, $
  	datadir = datadir, $
+ 	kfmedir = kfmedir, $
+ 	outputdir = outputdir, $
  	starlist=starlist, $
  	winszx = winszx, $
  	winszy = winszy, $
+ 	winoffx = winoffx, $
+ 	winoffy = winoffy
  	
 
  ;restore real data for the initial plot:
@@ -10408,7 +10432,8 @@ amptitle = widget_base(orbpar2, /row)
  
  widget_control, fitpar2bttn
 
- resetbtn2 = widget_button(planetcontrolbase,value = 'RESET PARAMETERS',event_pro = 'kfme_resetparam', xsize = 120)
+ resetbtn2 = widget_button(planetcontrolbase,value = 'RESET PARAMETERS', $
+ 	event_pro = 'kfme_resetparam', xsize = 120)
  ;***************TABSTUFF************************************
  
  ;This button just shows which planet it is:

@@ -13,10 +13,14 @@
 ;
 ;-
 pro kfme_init, $
+datadir = datadir, $
 kfmedir = kfmedir, $
 outputdir = outputdir, $
-datadir = datadir, $
-starlist = starlist
+starlist = starlist, $
+winszx = winszx, $
+winszy = winszy, $
+winoffx = winoffx, $
+winoffy = winoffy
 
 ;ROOTDIR: This will prefix the kfmedir, outputdir and starlist:
 spawn, 'echo $home', mdir

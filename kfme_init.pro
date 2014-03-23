@@ -16,6 +16,8 @@ pro kfme_init, $
 datadir = datadir, $
 kfmedir = kfmedir, $
 outputdir = outputdir, $
+restoredir = restoredir, $
+savedir = savedir, $
 starlist = starlist, $
 winszx = winszx, $
 winszy = winszy, $
@@ -37,6 +39,14 @@ outputdir = rdir+'kfme_output/'
 ;IDL save structure
 ;datadir = '/Users/matt/data/CHIRPS/rvs'
 datadir = '/Users/matt/projects/OTHER/N2K/PAPER2/data'
+
+;RESTOREDIR: When clicking "RESTORE ALL", this is the directory
+;it will first look in. If not set, it will look in 
+;outputdir+'/save_files/'
+restoredir = '/Users/matt/projects/OTHER/N2K/PAPER2/tables/orbits/'
+
+;SAVEDIR: The initial directory when clicking "SAVE ALL"
+savedir = '/Users/matt/projects/OTHER/N2K/PAPER2/tables/orbits/'
 
 ;WINSZ: Adjust the KFME window size. Use the fraction of your display:
 winszx = 0.95

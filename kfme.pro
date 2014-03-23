@@ -1280,7 +1280,10 @@ pro kfme_saveall, event
   if ~file_test((*pstate).outputdir+'save_files', /directory) $
 	then spawn, 'mkdir '+(*pstate).outputdir+'save_files'
 
-  
+  ;save savedir:
+  if (*pstate).savedir = '' then begin
+  	savedir = (*pstate).outputdir+'save_files/'
+  endif else savedir = (*pstate).savedir
   
   ;User select the name of the file to save to:
   newname = dialog_pickfile(filter='*.dat', title= $
@@ -1301,10 +1304,15 @@ pro kfme_restoreall, event
   ; of the top-level base.
   widget_control, event.top, get_uvalue=pstate
 
+  ; set restoredir:
+  if (*pstate).restoredir = '' then begin
+  	restoredir = (*pstate).outputdir+'save_files/'
+  endif else restoredir = (*pstate).restoredir
+  
   ;User select the name of the residuals to restore:
   newname = dialog_pickfile(filter='*.dat', title= $
   'Enter Filename...', $
-  path=(*pstate).outputdir+'save_files/')
+  path=restoredir)
  
   if newname ne '' then begin
   print, 'you restored ', newname
@@ -1359,8 +1367,10 @@ pro kfme_restoreall, event
  			 psym:state.psym, $
  			 ptransit:state.ptransit, $
  			 resetbtns:(*pstate).resetbtns, $
+ 			 restoredir:(*pstate).restoredir, $
  			 rmsresid:state.rmsresid, $
  			 rv:state.rv, $
+ 			 savedir:(*pstate).savedir, $
  			 scroll:(*pstate).scroll, $
  			 sliderflds:(*pstate).sliderflds, $
  			 tfine:state.tfine, $
@@ -3596,20 +3606,32 @@ pro kfme_restoreresid, event
  if newname ne '' then begin
  restore, newname
 
-   state = {ast:state.ast, $
+ state = {ast:state.ast, $
  			 botrow:(*pstate).botrow, $
+ 			 chisq:state.chisq, $
  			 combperg:state.combperg, $
  			 controlbar:(*pstate).controlbar, $
  			 connect:state.connect, $
  			 controlbase:(*pstate).controlbase, $
- 			 dof:state.ndof, $
+ 			 ndof:state.ndof, $
+ 			 datadir:state.datadir, $
+ 			 dew24:state.dew24, $
+ 			 dew39:state.dew39, $
  			 draw:(*pstate).draw, $
+ 			 fapiter:state.fapiter, $
  			 fixbttns:(*pstate).fixbttns, $
  			 fitplarr:state.fitplarr, $
- 			 fitplbttns:(*pstate).fitplbttns, $
+ 			 fitplbttns:state.fitplbttns, $
+ 			 import_delimiter:(*pstate).import_delimiter, $
+ 			 import_errunit:(*pstate).import_errunit, $
+ 			 import_jdoff:(*pstate).import_jdoff, $
+ 			 import_rvunit:(*pstate).import_rvunit, $
+ 			 import_skiplines:(*pstate).import_skiplines, $
  			 jitternum:state.jitternum, $
+ 			 kfmedir:state.kfmedir, $
  			 linestyle:state.linestyle, $
  			 multith:state.multith, $
+ 			 outputdir:state.outputdir, $
  			 p_orig:state.p_orig, $
  			 par1:state.par1, $
  			 pars:state.pars, $
@@ -3619,23 +3641,38 @@ pro kfme_restoreresid, event
  			 pdatls:(*pstate).pdatls, $
  			 pdata:state.pdata, $
  			 pdatname:state.pdatname, $
+ 			 perghi:state.perghi, $
+ 			 perglow:state.perglow, $
+ 			 pergres:state.pergres, $
+ 			 ppergfap:(*pstate).ppergfap, $
+ 			 pergfapbool:(*pstate).pergfapbool, $ 			 
  			 pfunctargs:state.pfunctargs, $
- 			 plot_time_study:state.plot_time_study, $
+ 			 planettabs:(*pstate).planettabs, $
+ 			 plot_time_study:(*state.pfunctargs).time_study, $
  			 previousjitter:state.previousjitter, $
+ 			 printpars:(*pstate).printpars, $
+ 			 psplot:state.psplot, $
  			 psym:state.psym, $
  			 ptransit:state.ptransit, $
+ 			 resetbtns:(*pstate).resetbtns, $
+ 			 restoredir:(*pstate).restoredir, $
+ 			 rmsresid:state.rmsresid, $
  			 rv:state.rv, $
+ 			 savedir:(*pstate).savedir, $
  			 scroll:(*pstate).scroll, $
  			 sliderflds:(*pstate).sliderflds, $
  			 tfine:(*pstate).tfine, $
+ 			 titleflag:(*pstate).titleflag, $
  			 togerr:state.togerr, $
  			 txtflds:(*pstate).txtflds, $
  			 toprow:(*pstate).toprow, $
  			 win_id:(*pstate).win_id, $
  			 xmin:state.xmin, $
  			 xmax:state.xmax, $
- 			 zoomplot:state.zoomplot, $
- 			 zoomrv:state.zoomrv}
+ 			 yminmax:(*pstate).yminmax, $
+ 			 yminval:(*pstate).yminval, $
+ 			 ymaxval:(*pstate).ymaxval, $
+ 			 zoomplot:state.zoomplot}
  
  
  pstate = ptr_new(state, /no_copy, /allocate)
@@ -9609,10 +9646,14 @@ pro kfme
  !p.color = 0
  usersymbol, 'CIRCLE', /fill
  p_orig = !p
+ restoredir = ''
+ savedir = ''
  kfme_init, $
  	datadir = datadir, $
  	kfmedir = kfmedir, $
  	outputdir = outputdir, $
+ 	restoredir = restoredir, $
+ 	savedir = savedir, $
  	starlist=starlist, $
  	winszx = winszx, $
  	winszy = winszy, $
@@ -12652,8 +12693,10 @@ amptitle = widget_base(orbpar2, /row)
  			 psym:8, $
  			 ptransit:ptransit, $
  			 resetbtns:resetbtns, $
+ 			 restoredir:restoredir, $
  			 rmsresid:rmsresid, $
  			 rv:rv, $
+ 			 savedir:savedir, $
  			 scroll:scroll, $
  			 sliderflds:sliderflds, $
  			 starlist:starlist, $

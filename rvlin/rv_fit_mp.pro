@@ -74,7 +74,7 @@ t, v, e, telvec = telvec, errmsg = errmsg, perror = perror, $
 covar = covar, status = status, bestnorm = bestnorm, niter = niter, $
 nfree = nfree, permin = permin, permax = permax, tpmin = tpmin, $
 tpmax = tpmax, eccmin = eccmin, eccmax = eccmax, offset = offset, $
-time_base = time_base
+time_base = time_base, quiet = quiet
 
   ignp7 = indgen(np)*7
   iper = ignp7
@@ -142,9 +142,12 @@ time_base = time_base
   if fixed[5] and orbel[igam[0]] ne 0 then $ ;if we're fixing gamma, we need to subtract it
     vt = v-orbel[igam[0]]
   
-  functargs = {time:timenorm,  velocity:vt, error:double(e), trend:~fixed[6], telvec:telvec, epoch:time_base}
+  functargs = {time:timenorm,  velocity:vt, error:double(e), $
+  				trend:~fixed[6], telvec:telvec, epoch:time_base}
 
-  parmp = mpfit('rvlin', functargs = functargs, parinfo = parinfo, errmsg = errmsg, perror = perror, covar = covar, status = status, bestnorm = bestnorm, niter = niter, ftol = 1d-15, xtol = 1d-15, autoderivative = 0, /quiet)
+  parmp = mpfit('rvlin', functargs = functargs, parinfo = parinfo, errmsg = errmsg, $
+  			perror = perror, covar = covar, status = status, bestnorm = bestnorm, $
+  			niter = niter, ftol = 1d-15, xtol = 1d-15, autoderivative = 0, quiet = quiet)
 
   if status eq 0 then stop
   ;stop
@@ -419,9 +422,18 @@ if total(~finite(fixed)) gt 0 then stop    ;Huh?
 
 printpars, orbel, fixed, message = 'Inital fit:', quiet = quiet
 
-par = rv_fit_mp_drive(np, orbel, fixed, t, v, e, telvec = telvec, errmsg = errmsg, perror = perror, covar = covar, status = status, bestnorm = bestnorm, niter = niter, nfree = nfree, eccmax = eccmax, eccmin = eccmin, offset = offset, time_base = time_base, permin = permin, permax = permax, tpmin = tpmin, tpmax = tpmax)
+par = rv_fit_mp_drive(np, orbel, fixed, t, v, e, telvec = telvec, errmsg = errmsg, $
+	perror = perror, covar = covar, status = status, bestnorm = bestnorm, $
+	niter = niter, nfree = nfree, eccmax = eccmax, eccmin = eccmin, $
+	offset = offset, time_base = time_base, permin = permin, permax = permax, $
+	tpmin = tpmin, tpmax = tpmax, quiet = quiet)
 
 printpars, par, fixed, message = "Final Fit:", quiet = quiet
+
+if keyword_set(errmsg) then begin
+	print, 'Error message from MPFIT:'
+	print, errmsg
+endif
 
 vall = v
 if ntels gt 1 then begin

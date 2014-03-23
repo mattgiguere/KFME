@@ -2914,9 +2914,9 @@ fixed[6] = pararr[5*n_planets+1].fixed;dvdt
 (*pstate).ndof = n_planets*5 + 2 - total(fixed)
 
 
-    orbel=rv_fit_mp(fitobs,fitdat, err, fixed=fixed, $
-					yfit=syn_fit,tps=max(fitobs),perror=perror, $
-					chi=chi_sq,rms=rms, orbel=orbel);, /plotfit)
+orbel=rv_fit_mp(fitobs,fitdat, err, fixed=fixed, $
+			   yfit=syn_fit,tps=max(fitobs),perror=perror, $
+			   chi=chi_sq,rms=rms, orbel=orbel, quiet=quiet);, /plotfit)
 
 ;stop
 pararr[5*indx].value = orbel[7*indx] ;p

@@ -9724,7 +9724,7 @@ pro kfme
 ;endif
  
  ;make the top level base and add resize events:
- tlb = widget_base(title = 'Interactive KFME v. 2014/03/22 ', $
+ tlb = widget_base(title = 'Interactive KFME v. 2014/03/23 ', $
  /col, xoff = x_offset, yoff = y_offset, /tlb_size_events)
  
  ;Create the top row to house the plot & buttons:
@@ -12308,6 +12308,25 @@ amptitle = widget_base(orbpar2, /row)
 	 value = strt(par1[9].limits[1]), /editable, $
  	 event_pro = 'kfme_dew39hilim', xsize = '12')
 
+ ;**************************************************************
+ ;           BOOTSTRAP:
+ ;**************************************************************
+;***************TABSTUFF************************************
+ planetbase9 = widget_base(planettab,/column,title=' Bootstrap MC ')
+
+ ;Make a row base to hold a series of controls:
+ planet = widget_base(planetbase9, /row)
+
+ planetcontrolbase = widget_base(planet, /col)
+ fitplanetbase = widget_base(planetcontrolbase, /row, /nonexclusive)
+ fitpar9bttn = widget_button(fitplanetbase, value = 'EXCLUDE REALIZATIONS ', $
+        event_pro = 'kfme_xcld_bmc')
+ 
+ widget_control, fitpar8bttn, /set_button
+
+ resetbtn8 = widget_button(planetcontrolbase,value = 'RESET PARAMETERS',event_pro = 'kfme_resetparam', xsize = 120)
+ ;***************TABSTUFF************************************
+ 
 
 
 

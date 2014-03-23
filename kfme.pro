@@ -583,18 +583,22 @@ pro kfme_update_fields, pstate
   set_slider_max=max((*(*pstate).pcf).cf_rv.jd) + $
   	(*pstate).pars.par1[0].value
 
+  ;offset
   newpar = (*pstate).pars.par1[5].value
   widget_control, (*pstate).txtflds.rvotextpl1, $
   set_value=strt(newpar)
   widget_control, (*pstate).sliderflds.sliderrvopl1, $
   set_value=double(newpar)
-
-  newpar = (*pstate).pars.par1[6].value
+  
+  ;slope rv
+  ;multiply by 365.25 to convert from m/s/day to m/s/yr
+  newpar = (*pstate).pars.par1[6].value * 365.25
   widget_control, (*pstate).txtflds.srvtextpl1, $
   set_value=strt(newpar)
   widget_control, (*pstate).sliderflds.slidersrvpl1, $
   set_value=double(newpar)
-
+  
+  ;curvature
   newpar = (*pstate).pars.par1[7].value
   widget_control, (*pstate).txtflds.crvtextpl1, $
   set_value=strt(newpar)
@@ -2740,8 +2744,8 @@ print, 'Offset on astx (micro as)      =',pararr[7*n_planets].value, $
 		 '+/- ', strt(perror[7*n_planets+0])
 print, 'Offset on asty (micro as)      =',pararr[7*n_planets+1].value, $
 		 '+/- ', strt(perror[7*n_planets+1])
-print, 'Offset on rv (m/s)             =',pararr[7*n_planets+2].value, $
-		 '+/- ', strt(perror[7*n_planets+2])
+print, 'Offset on rv (m/s)             =',pararr[7*n_planets+2].value*365.25, $
+		 '+/- ', strt(perror[7*n_planets+2]*365.25)
 print, 'Slope on astx (micro as/year)  =',pararr[7*n_planets+3].value, $
 		 '+/- ', strt(perror[7*n_planets+3])
 print, 'Slope on asty (micro as/year)  =',pararr[7*n_planets+4].value, $
@@ -2970,8 +2974,8 @@ endfor
 print, ' '
 print, 'Offset on rv (m/s)             =',pararr[5*n_planets].value, $
 		'+/- ', strt(perror[5*n_planets])
-print, 'Slope on rv (m/s /year)        =',pararr[5*n_planets+1].value, $
-		'+/- ', strt(perror[5*n_planets+1])
+print, 'Slope on rv (m/s /year)        =',pararr[5*n_planets+1].value*365.25, $
+		'+/- ', strt(perror[5*n_planets+1])*365.25
 print, 'Curve on rv (m/s /year^2)      =',pararr[5*n_planets+2].value, $
 		'+/- ', strt(perror[5*n_planets+2])
 print, 'Dewar 24 Offset (m/s)             =', $
@@ -3205,7 +3209,7 @@ t_duration = dblarr(ntrial, nplanets)
 ;******************************************************************************
 ;set parconstraint to 1 to exclude obvious outliers, 
 ;such as the case of HD 211810
-parconstraint = 0
+parconstraint = 1
 if parconstraint then begin
   ;use the size of newoutarr to create a new array 
   ;excluding the outlying elements:
@@ -3219,7 +3223,7 @@ if parconstraint then begin
   for ii=0, n_planets-1 do begin
 	;cycle through each planet, removing the realizations
 	;where any one of the planets has an e > that desired:
-	gdels = where(newoutarr[ii*7 + 2,gdels] lt 0.9 and chiarr lt 3.*(*pstate).chisq, nes)
+	gdels = where(newoutarr[ii*7 + 2,gdels] lt 0.94, nes)
   endfor
   ;create a new array that will have only the good values:
   neweroutarr = dblarr(sznoa[1], nes)
@@ -3344,7 +3348,7 @@ print,'Ecc: '+strt(bfecc)+' +/- '+eccerr
 print,'Om: '+strt(bfom)+' +/- '+omerr, ' degrees'
 print,'K: '+strt(bfk)+' +/- '+kerr, ' m/s'
 print,'gam: '+strt(bfgam)+' +/- '+gamerr, ' m/s'
-print,'dvdt: '+strt(bfdvdt)+' +/- '+dvdterr, ' m/s/yr'
+print,'dvdt: '+strt(bfdvdt*365.25)+' +/- '+strt(double(dvdterr)*365.25), ' m/s/yr'
 print,'msini: ', strt(bfmsini)+' +/- '+masserr, ' M_Earth'
 print,'a_pl: ', strt(bfapl)+' +/- '+arelerr, ' AU'
 print,'t_center: ', strt(bftcen)+' +/- '+tcenerr, ' HJD'
@@ -9244,7 +9248,7 @@ pro kfme_texsrv, event
   widget_control, event.top, get_uvalue=pstate
   
   ;change the srv value:
-  (*pstate).pars.par1[6].value = double(newpar)
+  (*pstate).pars.par1[6].value = double(newpar/365.25)
   
   ;Update the slider procedure to reflect this value:
   widget_control, (*pstate).sliderflds.slidersrvpl1, $
@@ -9409,10 +9413,10 @@ pro kfme_slisrv, event
   widget_control, event.top, get_uvalue=pstate
 
   ;change the srv value:
-  (*pstate).pars.par1[6].value = event.value/1d3
+  (*pstate).pars.par1[6].value = event.value/365.25
 
   widget_control, (*pstate).txtflds.srvtextpl1, $
-  set_value=strt((event.value/1d3))
+  set_value=strt((event.value))
 
   ;Call the "fit" routine:
   kfme_dofit, pstate
@@ -9720,7 +9724,7 @@ pro kfme
 ;endif
  
  ;make the top level base and add resize events:
- tlb = widget_base(title = 'Interactive KFME v. 2014/02/28 ', $
+ tlb = widget_base(title = 'Interactive KFME v. 2014/03/22 ', $
  /col, xoff = x_offset, yoff = y_offset, /tlb_size_events)
  
  ;Create the top row to house the plot & buttons:
@@ -12151,7 +12155,7 @@ amptitle = widget_base(orbpar2, /row)
  
  slidersrvpl1 = widget_slider(orbpar12, $
  	event_pro = 'kfme_slisrv', /suppress_value, $
- 	/drag, value = initsrv, minimum = -200.d, maximum = 200.d)
+ 	/drag, value = initsrv, minimum = -50.d, maximum = 50.d)
  
  lowlim = widget_base(orbpar12, /row)
  

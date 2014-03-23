@@ -878,8 +878,8 @@ endif;planet7
   snr1 = k1*sqrt(nobs) /  (*pstate).rmsresid
   snr1str1 = strt(snr1, f='(F5.1)')
   ;printf, fnum, '\hline'
-  dvdtstr1 = strt((*pstate).pars.par1[6].value, f='(F7.3)')
-  dvdtuncstr1 = strt((*pstate).pars.par1[6].error, f='(F7.3)')
+  dvdtstr1 = strt((*pstate).pars.par1[6].value*365.25, f='(F7.3)')
+  dvdtuncstr1 = strt((*pstate).pars.par1[6].error*365.25, f='(F7.3)')
   printf, fnum, '\def\dvdt'+first3+'{$'+dvdtstr1+'$}'  
   printf, fnum, '\def\dvdtunc'+first3+'{$'+dvdtuncstr1+'$}'  
   dvdtstr2 = '\dvdt'+first3
@@ -1614,7 +1614,7 @@ if n_planets eq 4 then begin
 endif;4 planets total
 
   if dvdt ne 0 then begin
-  printf, fnum, 'dvdt (m s$^{-1}$ yr$^{-1}$) & ',dvdtstr2,' $\pm$ ',dvdtuncstr2, ' \\'
+  printf, fnum, '\textit{dv/dt} (m s$^{-1}$ yr$^{-1}$) & ',dvdtstr2,' $\pm$ ',dvdtuncstr2, ' \\'
   endif;include linear trend
 
   printf, fnum, 'N$_{\textrm{obs}}$   &   ',nobsstr,' \\'

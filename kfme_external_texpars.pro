@@ -157,7 +157,7 @@ printf, fnum, ''
 if ~keyword_set(unc_gam) then unc_gam=''
 gam = (*pstate).pars.par1[5].value
 printf, fnum, '$\gamma$   & ',gam,' & ',unc_gam,' & '
-dvdt= (*pstate).pars.par1[6].value
+dvdt= (*pstate).pars.par1[6].value*365.25
 if ~keyword_set(unc_dvdt) then unc_dvdt=''
 printf, fnum, 'dvdt   & ',dvdt,' & ',unc_dvdt,'   \\'
 printf, fnum, ''

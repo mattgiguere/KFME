@@ -1281,7 +1281,8 @@ pro kfme_saveall, event
 	then spawn, 'mkdir '+(*pstate).outputdir+'save_files'
 
   ;save savedir:
-  if (*pstate).savedir = '' then begin
+  if (*pstate).savedir eq '' then begin
+  	print, '(*pstate).savedir was not set.'
   	savedir = (*pstate).outputdir+'save_files/'
   endif else savedir = (*pstate).savedir
   
@@ -1305,7 +1306,7 @@ pro kfme_restoreall, event
   widget_control, event.top, get_uvalue=pstate
 
   ; set restoredir:
-  if (*pstate).restoredir = '' then begin
+  if (*pstate).restoredir eq '' then begin
   	restoredir = (*pstate).outputdir+'save_files/'
   endif else restoredir = (*pstate).restoredir
   
@@ -9660,7 +9661,8 @@ pro kfme
  	winoffx = winoffx, $
  	winoffy = winoffy
  	
-
+ print, 'restoredir is now: ', restoredir
+ 
  ;restore real data for the initial plot:
  cfname = 'cf1_001bl21'
  restore, kfmedir+'data/'+cfname+'.dat'

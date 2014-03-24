@@ -421,6 +421,7 @@ endif
 	 ps_close
 	 spawn, 'open '+filen+'.eps'
 	  widget_control, (*pstate).controlbar.psplotbutton, set_button = 0
+	  widget_control, (*pstate).bootmc.bmc_psplotbutton, set_button = 0
 	 (*pstate).psplot = 0
   endif
 
@@ -1320,6 +1321,7 @@ pro kfme_restoreall, event
   restore, newname
   
  state = {ast:state.ast, $
+ 			 bootmc:state.bootmc, $
  			 botrow:(*pstate).botrow, $
  			 chisq:state.chisq, $
  			 combperg:state.combperg, $
@@ -1579,6 +1581,7 @@ pro kfme_plotresid, event
   if (*pstate).psplot then begin
 	 ps_close
 	  widget_control, (*pstate).controlbar.psplotbutton, set_button = 0
+	  widget_control, (*pstate).bootmc.bmc_psplotbutton, set_button = 0
 	 (*pstate).psplot = 0
   endif
 
@@ -1896,6 +1899,7 @@ endelse
     endif;163607
 	 ps_close
 	  widget_control, (*pstate).controlbar.psplotbutton, set_button = 0
+	  widget_control, (*pstate).bootmc.bmc_psplotbutton, set_button = 0
 	 (*pstate).psplot = 0
 
   spawn, 'open '+filen+'.eps'
@@ -1987,6 +1991,7 @@ pro kfme_pergram, event
     spawn, 'open '+filen+'.eps'
 
 	  widget_control, (*pstate).controlbar.psplotbutton, set_button = 0
+	  widget_control, (*pstate).bootmc.bmc_psplotbutton, set_button = 0
 	 (*pstate).psplot = 0
   endif
 end;kfme_pergram.pro
@@ -2034,6 +2039,7 @@ pro kfme_residpergram, event
     spawn, 'open '+filen+'.eps'
 
 	  widget_control, (*pstate).controlbar.psplotbutton, set_button = 0
+	  widget_control, (*pstate).bootmc.bmc_psplotbutton, set_button = 0
 	 (*pstate).psplot = 0
   endif
 end;kfme_residpergram.pro
@@ -3215,13 +3221,13 @@ t_duration = dblarr(ntrial, nplanets)
 ;THIS IS THE SECTION FOR PUTTING CUTS ON THE REALIZATIONS
 ;CHANGE THE GDELS WHERE STATEMENT TO CHANGE WHICH "GOOD ELEMENTS"
 ;YOU WANT TO KEEP.
-;SET PARCONSTRAINT TO 1 TO USE ONLY THE GOOD ELEMENTS
-;PARCONSTRAINT = 0: USE ALL ELEMENTS
+;SET bootmcxcld TO 1 TO USE ONLY THE GOOD ELEMENTS
+;bootmcxcld = 0: USE ALL ELEMENTS
 ;******************************************************************************
-;set parconstraint to 1 to exclude obvious outliers, 
+;set bootmcxcld to 1 to exclude obvious outliers, 
 ;such as the case of HD 211810
-parconstraint = 1
-if parconstraint then begin
+
+if (*pstate).bootmc.bootmcxcld then begin
   ;use the size of newoutarr to create a new array 
   ;excluding the outlying elements:
   sznoa = size(newoutarr)
@@ -3608,6 +3614,7 @@ pro kfme_restoreresid, event
  restore, newname
 
  state = {ast:state.ast, $
+ 			 bootmc:state.bootmc, $
  			 botrow:(*pstate).botrow, $
  			 chisq:state.chisq, $
  			 combperg:state.combperg, $
@@ -3701,6 +3708,9 @@ pro kfme_plotps, event
   
   ;print
   print, 'Postscript Plot Engaged?', (*pstate).psplot
+  
+  widget_control, (*pstate).controlbar.psplotbutton, set_button = (*pstate).psplot
+  widget_control, (*pstate).bootmc.bmc_psplotbutton, set_button = (*pstate).psplot
   
 
 end ;kfme_plotps.pro
@@ -9634,6 +9644,26 @@ pro kfme_crvhilim, event
   
 end;kfme_crvhilim.pro
 
+ ;**************************************************************
+ ;**************************************************************
+ ;           BOOTSTRAP MC TAB ROUTINES
+ ;**************************************************************
+ ;**************************************************************
+
+ pro kfme_xcld_bmc, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.top, get_uvalue=pstate
+  
+  print, 'Exclude Bootstrap MC Realizations?', event.select
+
+  ;change the bootmcxcld value:
+  (*pstate).bootmc.bootmcxcld = event.select
+  
+  ;Call the "fit" routine:
+  kfme_dofit, pstate
+  
+end;kfme_xcld_bmc.pro
+
 
 ;**************************************************************
  ;**************************************************************
@@ -9767,7 +9797,7 @@ pro kfme
 ;endif
  
  ;make the top level base and add resize events:
- tlb = widget_base(title = 'Interactive KFME v. 2014/03/23 ', $
+ tlb = widget_base(title = 'Interactive KFME v. 2014/03/24 ', $
  /col, xoff = x_offset, yoff = y_offset, /tlb_size_events)
  
  ;Create the top row to house the plot & buttons:
@@ -9980,7 +10010,7 @@ pro kfme
  ;Add a button to toggle calculating the FAP in the periodogram:
  pergfapbool = 0
  pfapbase = widget_base(pergfapbuttnrow, /nonexclusive)
- psplotbutton = widget_button(pfapbase, $
+ psfapbutton = widget_button(pfapbase, $
    value = 'PERIODOGRAM FAP?', $
    event_pro = 'kfme_pergfapbool', XSIZE=fullcol)
  
@@ -10023,7 +10053,7 @@ pro kfme
  psplot = 0
  psplotbase = widget_base(buttnrow1, /nonexclusive)
  psplotbutton = widget_button(psplotbase, $
-   value = 'PS', $
+   value = 'SAVE2PS', $
    event_pro = 'kfme_plotps', XSIZE=thirdcol)
  
  ;Add a button to show the theoretical curve for each planet:
@@ -12352,24 +12382,58 @@ amptitle = widget_base(orbpar2, /row)
  	 event_pro = 'kfme_dew39hilim', xsize = '12')
 
  ;**************************************************************
- ;           BOOTSTRAP:
+ ;           BOOTSTRAP MC:
  ;**************************************************************
+ ;This section of for the Bootstrap Monte Carlo analysis
 ;***************TABSTUFF************************************
- planetbase9 = widget_base(planettab,/column,title=' Bootstrap MC ')
+planetbase9 = widget_base(planettab,/column,title=' Bootstrap MC ')
 
- ;Make a row base to hold a series of controls:
- planet = widget_base(planetbase9, /row)
+;Make a row base to hold a series of controls:
+planet = widget_base(planetbase9, /row)
 
- planetcontrolbase = widget_base(planet, /col)
- fitplanetbase = widget_base(planetcontrolbase, /row, /nonexclusive)
- fitpar9bttn = widget_button(fitplanetbase, value = 'EXCLUDE REALIZATIONS ', $
-        event_pro = 'kfme_xcld_bmc')
+planetcontrolbase = widget_base(planet, /col)
+
+;FIRST COLUMN OF BOOTSTRAP MC TAB:
+plottypesbase = widget_base(planet, /col, frame =1)
+
+bootmcxcld = 0
+radiobase = widget_base(plottypesbase, /nonexclusive)
+xcldrlzbttn = widget_button(radiobase, value = 'EXCLUDE REALIZATIONS', $
+   event_pro = 'kfme_xcld_bmc')
  
- widget_control, fitpar8bttn, /set_button
+textpar = widget_text(plottypesbase, value = 'PLOT TYPE', $
+	xsize = 10)
 
- resetbtn8 = widget_button(planetcontrolbase,value = 'RESET PARAMETERS',event_pro = 'kfme_resetparam', xsize = 120)
+;set the plot type to either contour or scatter:
+bmc_contour = 1
+radiobase = widget_base(plottypesbase, /nonexclusive)
+bmc_contourbttn = widget_button(radiobase, value = 'CONTOUR ', $
+	   event_pro = 'kfme_bmc_plttp')
+widget_control, bmc_contourbttn, set_button = bmc_contour
+
+radiobase = widget_base(plottypesbase, /nonexclusive)
+bmc_scatter = 0
+bmc_scatterbttn = widget_button(radiobase, value = 'SCATTER ', $
+	   event_pro = 'kfme_bmc_plttp')
+widget_control, bmc_scatterbttn, set_button = bmc_scatter
+ 
+bmc_psplotbase = widget_base(plottypesbase, /nonexclusive)
+ bmc_psplotbutton = widget_button(bmc_psplotbase, $
+   value = 'SAVE2PS', $
+   event_pro = 'kfme_plotps', XSIZE=thirdcol)
+
+;SECOND COLUMN OF BOOTSTRAP MC TAB:
+plotrangebase = widget_base(planet, /col, frame =1)
+
+ monte2buttn = widget_button(plotrangebase, value = 'BOOTSTRAP MC', $
+   event_pro = 'kfme_monte2', XSIZE=halfcol)
+
+bmc_xrange = [0,0]
+bmc_yrange = [0,0]
+bmc_xpar = 'e'
+bmc_ypar = 'K'
+
  ;***************TABSTUFF************************************
- 
 
 
 
@@ -12620,6 +12684,17 @@ amptitle = widget_base(orbpar2, /row)
                slidertoppl7:slidertoppl7}
                
  
+;BootstrapMC Parameters:
+bootmc = {bootmcxcld:bootmcxcld, $
+		  bmc_contour:bmc_contour, $
+		  bmc_psplotbutton:bmc_psplotbutton, $
+		  bmc_scatter:bmc_scatter, $
+		  bmc_xrange:bmc_xrange, $
+		  bmc_yrange:bmc_yrange, $
+		  bmc_xpar:bmc_xpar, $
+		  bmc_ypar:bmc_ypar}
+		  
+
  ;Widgets in the Control Bar:
  
  controlbar = { aloneplanet:aloneplanet, $
@@ -12647,6 +12722,7 @@ amptitle = widget_base(orbpar2, /row)
 
  ;Create a structure of data for the application:
  state = {ast:ast, $
+ 			 bootmc:bootmc, $
  			 botrow:botrow, $
  			 chisq:chisq, $
  			 combperg:combperg, $

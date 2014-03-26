@@ -2919,11 +2919,26 @@ fixed[6] = pararr[5*n_planets+1].fixed;dvdt
 
 (*pstate).ndof = n_planets*5 + 2 - total(fixed)
 
+;old way of calling things:
+orbel=rv_fit_mp(fitobs,fitdat, err, $
+	fixed=fixed, $
+	yfit=syn_fit,$
+	tps=max(fitobs), $
+	perror=perror, $
+	chi=chi_sq, $
+	rms=rms, $
+	orbel=orbel, $
+	quiet=quiet, $
+	nplanets=n_planets)
 
-orbel=rv_fit_mp(fitobs,fitdat, err, fixed=fixed, $
-			   yfit=syn_fit,tps=max(fitobs),perror=perror, $
-			   chi=chi_sq,rms=rms, orbel=orbel, quiet=quiet);, /plotfit)
-
+new = 0
+if new eq 1 then begin
+;new way of calling things:
+  parmp = mpfit('rvlin', functargs = functargs, parinfo = parinfo, errmsg = errmsg, $
+  			perror = perror, covar = covar, status = status, bestnorm = bestnorm, $
+  			niter = niter, ftol = 1d-15, xtol = 1d-15, autoderivative = 0, quiet = quiet)
+	
+endif
 ;stop
 pararr[5*indx].value = orbel[7*indx] ;p
 pararr[5*indx+4].value = orbel[7*indx+1] ;tp

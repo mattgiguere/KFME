@@ -145,6 +145,7 @@ time_base = time_base, quiet = quiet
   functargs = {time:timenorm,  velocity:vt, error:double(e), $
   				trend:~fixed[6], telvec:telvec, epoch:time_base}
 
+;stop
   parmp = mpfit('rvlin', functargs = functargs, parinfo = parinfo, errmsg = errmsg, $
   			perror = perror, covar = covar, status = status, bestnorm = bestnorm, $
   			niter = niter, ftol = 1d-15, xtol = 1d-15, autoderivative = 0, quiet = quiet)
@@ -192,7 +193,8 @@ function rv_fit_mp, $
             _extra = plotextra           ;parameters passed to plotting routines
 
 
-if n_elements(time_base) eq 0 then time_base = 14000 ;Default for California Planet Search Spectra -- consistent with rv_drive
+;Default for California Planet Search Spectra -- consistent with rv_drive
+if n_elements(time_base) eq 0 then time_base = 14000 
 
 nparams = n_params()
 
@@ -309,18 +311,10 @@ npar = n_elements(orbel)  ;number of independent parameters should =  nplanet*5+
   
 if ~finite(orbel[6]) then orbel[6] = 0    ;NaNs are Interpreted as 0.
 
-fixed = bytarr(npar)            ;same size arary
-fixed[igam] = 1                 ;fix gammas 
-fixed[idvdt] = 1                ;fix dvdts 
-fixed[5] = 0                    ;let first gamma float
-
 nfi = n_elements(fixed_in)
-if nfi gt 0 then begin
-  fixed[0:nfi-1] = fixed_in       ;User overrides
-endif
+fixed = fixed_in       ;User overrides
 
 if n_elements(trend) eq 0 then trend = (orbel[6] ne 0) or ~fixed[6] ;if dvdt is set or is floating, fit a trend
-if nfi eq 0 then fixed[6] = ~trend   ;If fixed was not specified, then set it if we have a trend
 
 nper = n_elements(per)
 if nper gt np then begin

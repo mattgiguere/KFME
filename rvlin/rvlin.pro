@@ -4,7 +4,9 @@
 ;
 ;
 ; PURPOSE:
-;      Solve for the linear parameters omega, K, gamma, & dv/dt for a system of multiple planets give P, t_p, and e for each planet, and a set of RV data. 
+;      Solve for the linear parameters omega, K, gamma, & dv/dt for a 
+;		system of multiple planets give P, t_p, and e for each planet, 
+;		and a set of RV data. 
 ;
 ;
 ; CATEGORY:
@@ -12,32 +14,41 @@
 ;
 ;
 ; CALLING SEQUENCE:
-;  residuals = rvlin (pars, dp, time = time, velocity = vel, error = err, pars = parset, trend = trend, yfit = model, telvec=telvec, epoch = epoch, offset=offset) 
+;  residuals = rvlin (pars, dp, time = time, velocity = vel, error = err, 
+;		pars = parset, trend = trend, yfit = model, telvec=telvec, 
+;		epoch = epoch, offset=offset) 
 ;
 ;
 ; INPUTS:
-;     pars: vector of nonlinear parameters, 3 per planet:  P, (tp-t0), e*1000 (where tp is time of periastron passage, and e is the eccentricity)
+;     pars: vector of nonlinear parameters, 3 per planet:  P, (tp-t0), 
+;		e*1000 (where tp is time of periastron passage, and e is the eccentricity)
 ;    time: times of observations
 ;    velocity: RV measurements
 ;    error: uncertainties of the RV measurements
 ;
 ; OPTIONAL INPUTS:
 ;   
-;    telvec: array of flags indicating telescope of origin for time, velocity, error
-;    epoch: user-specified epoch, t0.  Defaults to 14000.  Set to 0 for custom call to RVLIN.  RV_MP uses default value.
+;    telvec: array of flags indicating telescope of origin for time, 
+;		velocity, error
+;    epoch: user-specified epoch, t0.  Defaults to 14000.  Set to 0 
+;		for custom call to RVLIN.  RV_MP uses default value.
 ;
 ; KEYWORD PARAMETERS:
 ;
 ;    trend: force RVLIN to fit for a linear trend 
-;    twotel: force RVLIN to fit for an offset between data from two telescopes
+;    twotel: force RVLIN to fit for an offset between data from two 
+;		telescopes
 ;
 ; OUTPUTS:
-;    residuals: vector of (velocities - model) / error, as required for MPFIT.  Has same length as [time,time2].
+;    residuals: vector of (velocities - model) / error, as required 
+;		for MPFIT.  Has same length as [time,time2].
 ;
 ; OPTIONAL OUTPUTS:
 ;
-;    pars: vector of best-fit values for linear parameters: [h0,c0,h1,c1,...v0,d,offset]
-;    yfit: model output evaluated at times given.  Has same length as [time,time2].
+;    pars: vector of best-fit values for linear parameters: [h0,c0,h1,
+;			c1,...v0,d,offset]
+;    yfit: model output evaluated at times given.  Has same length 
+;				as [time,time2].
 ;    dp: derivative matrix required by MPFIT for explicit derivatives
 ;    offset: array of offsets between the various telescopes
 ;

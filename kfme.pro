@@ -2919,6 +2919,8 @@ fixed[6] = pararr[5*n_planets+1].fixed;dvdt
 
 (*pstate).ndof = n_planets*5 + 2 - total(fixed)
 
+new = 0
+if new eq 0 then begin
 ;old way of calling things:
 orbel=rv_fit_mp(fitobs,fitdat, err, $
 	fixed=fixed, $
@@ -2930,15 +2932,23 @@ orbel=rv_fit_mp(fitobs,fitdat, err, $
 	orbel=orbel, $
 	quiet=quiet, $
 	nplanets=n_planets)
-
-new = 0
-if new eq 1 then begin
+endif else begin
 ;new way of calling things:
-  parmp = mpfit('rvlin', functargs = functargs, parinfo = parinfo, errmsg = errmsg, $
-  			perror = perror, covar = covar, status = status, bestnorm = bestnorm, $
-  			niter = niter, ftol = 1d-15, xtol = 1d-15, autoderivative = 0, quiet = quiet)
+  parmp = mpfit('rvlin', $
+			   functargs = functargs, $
+			   parinfo = parinfo, $
+			   errmsg = errmsg, $
+			   perror = perror, $
+			   covar = covar, $
+			   status = status, $
+			   bestnorm = bestnorm, $
+			   niter = niter, $
+			   ftol = 1d-15, $
+			   xtol = 1d-15, $
+			   autoderivative = 0, $
+			   quiet = quiet)
 	
-endif
+endelse
 ;stop
 pararr[5*indx].value = orbel[7*indx] ;p
 pararr[5*indx+4].value = orbel[7*indx+1] ;tp
@@ -3071,7 +3081,7 @@ pro kfme_monte2, event
  ; of the top-level base.
  widget_control, event.top, get_uvalue=pstate
 
-Ntrial=1d3
+Ntrial=(*pstate).bootmc.bmc_ntrial
 star = (*(*pstate).pfunctargs).extitle
 print, 'the star is: ', star
 ip = strmid(star, 2, strlen(star))
@@ -3121,8 +3131,7 @@ print, '---------------------------------------'
 	 orbpar=pararr.value
 
 m_star = (*(*pstate).pfunctargs).m_star
-nplanets=(*(*pstate).pfunctargs).n_planets
-n_planets=nplanets
+n_planets=(*(*pstate).pfunctargs).n_planets
 indx=findgen(n_planets)
 
 period=orbpar[indx*5]
@@ -3227,8 +3236,8 @@ end
 
 print, 'Nan?', where(~finite(newoutarr))
 
-t_center = dblarr(ntrial, nplanets)
-t_duration = dblarr(ntrial, nplanets)
+t_center = dblarr(ntrial, n_planets)
+t_duration = dblarr(ntrial, n_planets)
 
 
 
@@ -12701,7 +12710,10 @@ bmc_ypar = 'K'
  
 ;BootstrapMC Parameters:
 bootmc = {bootmcxcld:bootmcxcld, $
+		  bmc_chiarr:bmc_chiarr, $
 		  bmc_contour:bmc_contour, $
+		  bmc_newoutarr:bmc_newoutarr, $
+		  bmc_ntrial:bmc_ntrial, $
 		  bmc_psplotbutton:bmc_psplotbutton, $
 		  bmc_scatter:bmc_scatter, $
 		  bmc_xrange:bmc_xrange, $

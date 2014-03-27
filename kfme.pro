@@ -9803,13 +9803,13 @@ pro kfme_bmc_crange, event
   print, 'Color range set to: ', newval
 end;kfme_bmc_crange.pro
 
-pro kfme_bmc_px_set, event
+pro kfme_bmc_perx_set, event
   ;Retrieve the pointer to the state structure:
   widget_control, event.top, get_uvalue=pstate
   
   print, 'Plot per along X? ', event.select
-  (*pstate).bootmc.bmc_px_set = event.select
-end;kfme_bmc_px_set.pro
+  (*pstate).bootmc.bmc_perx_set = event.select
+end;kfme_bmc_perx_set.pro
 
 pro kfme_bmc_plot_perx, event
   ;Retrieve the pointer to the state structure:
@@ -9821,13 +9821,13 @@ pro kfme_bmc_plot_perx, event
   print, 'Now plotting planet ', strt(newval), ' on the X axis.'
 end;kfme_bmc_plot_perx.pro
 
-pro kfme_bmc_py_set, event
+pro kfme_bmc_pery_set, event
   ;Retrieve the pointer to the state structure:
   widget_control, event.top, get_uvalue=pstate
   
   print, 'Plot per along Y? ', event.select
-  (*pstate).bootmc.bmc_py_set = event.select
-end;kfme_bmc_py_set.pro
+  (*pstate).bootmc.bmc_pery_set = event.select
+end;kfme_bmc_pery_set.pro
 
 pro kfme_bmc_plot_pery, event
   ;Retrieve the pointer to the state structure:
@@ -12715,24 +12715,24 @@ bmcbase4 = widget_base(planet, /col, frame =1)
 textpar = widget_text(bmcbase4, value = 'PERIOD')
 
 bmc_plot_perx = ''
-bmc_pxbase = widget_base(bmcbase4, /row)
-bmc_px_set = 0
-radiobase = widget_base(bmc_pxbase, /nonexclusive)
+bmc_perxbase = widget_base(bmcbase4, /row)
+bmc_perx_set = 0
+radiobase = widget_base(bmc_perxbase, /nonexclusive)
 bmc_perxbttn  = widget_button(radiobase, value = 'X: ', $
-	event_pro = 'kfme_bmc_px_set')
-widget_control, bmc_perxbttn, set_button = bmc_px_set
-bmc_perxval = widget_text(bmc_pxbase, $
+	event_pro = 'kfme_bmc_perx_set')
+widget_control, bmc_perxbttn, set_button = bmc_perx_set
+bmc_perxval = widget_text(bmc_perxbase, $
 	 value = strt(bmc_plot_perx), /editable, $
  	 event_pro = 'kfme_bmc_plot_perx', xsize = '12')
 
 bmc_plot_pery = ''
-bmc_pybase = widget_base(bmcbase4, /row)
-bmc_py_set = 0
-radiobase = widget_base(bmc_pybase, /nonexclusive)
+bmc_perybase = widget_base(bmcbase4, /row)
+bmc_pery_set = 0
+radiobase = widget_base(bmc_perybase, /nonexclusive)
 bmc_perybttn  = widget_button(radiobase, value = 'Y: ', $
-	event_pro = 'kfme_bmc_py_set')
-widget_control, bmc_perybttn, set_button = bmc_py_set
-bmc_peryval = widget_text(bmc_pybase, $
+	event_pro = 'kfme_bmc_pery_set')
+widget_control, bmc_perybttn, set_button = bmc_pery_set
+bmc_peryval = widget_text(bmc_perybase, $
 	 value = strt(''), /editable, $
  	 event_pro = 'kfme_bmc_plot_pery', xsize = '12')
 
@@ -13054,8 +13054,8 @@ bootmc = {bmc_xcld:bmc_xcld, $
 		  bmc_yrange:bmc_yrange, $
 		  bmc_plot_perx:bmc_plot_perx, $
 		  bmc_plot_pery:bmc_plot_pery, $
-		  bmc_px_set:bmc_px_set, $
-		  bmc_py_set:bmc_py_set, $
+		  bmc_perx_set:bmc_perx_set, $
+		  bmc_pery_set:bmc_pery_set, $
 		  bmc_perlolim:bmc_perlolim, $
 		  bmc_perlolim_set:bmc_perlolim_set, $
 		  bmc_perhilim:bmc_perhilim, $

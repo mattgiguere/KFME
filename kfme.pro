@@ -3081,7 +3081,7 @@ pro kfme_monte2, event
  ; of the top-level base.
  widget_control, event.top, get_uvalue=pstate
 
-Ntrial=(*pstate).bootmc.bmc_ntrial
+Ntrial=(*pstate).bootmc.bmc_niter
 star = (*(*pstate).pfunctargs).extitle
 print, 'the star is: ', star
 ip = strmid(star, 2, strlen(star))
@@ -9674,19 +9674,135 @@ end;kfme_crvhilim.pro
  ;**************************************************************
  ;**************************************************************
 
- pro kfme_xcld_bmc, event
+pro kfme_bmc_niter, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.id, get_value=newlim
+  widget_control, event.top, get_uvalue=pstate
+  
+  ;change the number of iterations for bootstrap mc:
+  (*pstate).bootmc.bmc_niter = double(newlim)
+  print, '# of BMC Realizations: ', newlim
+end;kfme_bmc_niter.pro
+
+ pro kfme_bmc_xcld, event
   ;Retrieve the pointer to the state structure:
   widget_control, event.top, get_uvalue=pstate
   
   print, 'Exclude Bootstrap MC Realizations?', event.select
+  ;change the bmc_xcld value:
+  (*pstate).bootmc.bmc_xcld = event.select
+end;kfme_bmc_xcld.pro
 
-  ;change the bootmcxcld value:
-  (*pstate).bootmc.bootmcxcld = event.select
+pro kfme_bmc_plot, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.id, get_value=newlim
+  widget_control, event.top, get_uvalue=pstate
   
-  ;Call the "fit" routine:
-  kfme_dofit, pstate
+  plot, findgen(50), /nodata
+  xyouts, 'Work in progress...', 0.5, 0.5, /normal
+  print, 'Work in progress...'
   
-end;kfme_xcld_bmc.pro
+end;kfme_bmc_plot.pro
+
+pro kfme_bmc_plt_cntr, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.top, get_uvalue=pstate
+  
+  print, 'Contour Plot?', 1
+  ;change the bmc_xcld value:
+  (*pstate).bootmc.bmc_contour = 1
+
+  ;now make sure the scatter is NOT set
+  (*pstate).bootmc.bmc_scatter = 0
+  widget_control, (*pstate).bootmc.bmc_gui.bmc_scatterbttn, set_button = 0
+end ;kfme_bmc_plt_cntr.pro
+
+pro kfme_bmc_plt_sctr, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.top, get_uvalue=pstate
+  
+  print, 'Scatter Plot?', 1
+  ;change the bmc_xcld value:
+  (*pstate).bootmc.bmc_scatter = 1
+
+  ;now make sure the scatter is NOT set
+  (*pstate).bootmc.bmc_contour = 0
+  widget_control, (*pstate).bootmc.bmc_gui.bmc_contourbttn, set_button = 0
+end ;kfme_bmc_plt_sctr.pro
+
+pro kfme_bmc_plot_xran, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.top, get_uvalue=pstate
+  
+  print, 'User-defined X range? ', event.select
+  (*pstate).bootmc.bmc_xran_set = event.select
+end;kfme_bmc_plot_xran.pro
+
+pro kfme_bmc_xrange, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.id, get_value=newval
+  widget_control, event.top, get_uvalue=pstate
+  
+  ;change the X range for bootstrap mc:
+  (*pstate).bootmc.bmc_xrange = double(strsplit(newval, ',', /extract))
+  print, 'X range set to: ', newval
+end;kfme_bmc_xrange.pro
+
+pro kfme_bmc_plot_yran, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.top, get_uvalue=pstate
+  
+  print, 'User-defined Y range? ', event.select
+  (*pstate).bootmc.bmc_yran_set = event.select
+end;kfme_bmc_plot_yran.pro
+
+pro kfme_bmc_yrange, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.id, get_value=newval
+  widget_control, event.top, get_uvalue=pstate
+  
+  ;change the y range for bootstrap mc:
+  (*pstate).bootmc.bmc_yrange = double(strsplit(newval, ',', /extract))
+  print, 'Y range set to: ', newval
+end;kfme_bmc_yrange.pro
+
+pro kfme_bmc_cscb, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.top, get_uvalue=pstate
+  
+  print, 'Chi Squared Color Bar? ', event.select
+  (*pstate).bootmc.bmc_chisqcb = event.select
+end;kfme_bmc_cscb.pro
+
+pro kfme_bmc_ctable, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.id, get_value=newval
+  widget_control, event.top, get_uvalue=pstate
+  
+  ;change the number of iterations for bootstrap mc:
+  (*pstate).bootmc.bmc_ctable = double(newval)
+  print, 'BMC Realizations Color Table: ', newval
+  loadct, newval  
+end;kfme_bmc_ctable.pro
+
+pro kfme_bmc_plot_cran, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.top, get_uvalue=pstate
+  
+  print, 'User-defined Color range? ', event.select
+  (*pstate).bootmc.bmc_cran_set = event.select
+end;kfme_bmc_plot_cran.pro
+
+pro kfme_bmc_crange, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.id, get_value=newval
+  widget_control, event.top, get_uvalue=pstate
+  
+  ;change the color bar range for bootstrap mc:
+  (*pstate).bootmc.bmc_crange = double(strsplit(newval, ',', /extract))
+  print, 'Color range set to: ', newval
+end;kfme_bmc_crange.pro
+
 
 
 ;**************************************************************
@@ -12411,51 +12527,129 @@ amptitle = widget_base(orbpar2, /row)
  ;This section of for the Bootstrap Monte Carlo analysis
 ;***************TABSTUFF************************************
 planetbase9 = widget_base(planettab,/column,title=' Bootstrap MC ')
-
 ;Make a row base to hold a series of controls:
 planet = widget_base(planetbase9, /row)
 
-planetcontrolbase = widget_base(planet, /col)
-
-;FIRST COLUMN OF BOOTSTRAP MC TAB:
-plottypesbase = widget_base(planet, /col, frame =1)
-
-bootmcxcld = 0
-radiobase = widget_base(plottypesbase, /nonexclusive)
-xcldrlzbttn = widget_button(radiobase, value = 'EXCLUDE REALIZATIONS', $
-   event_pro = 'kfme_xcld_bmc')
- 
-textpar = widget_text(plottypesbase, value = 'PLOT TYPE', $
-	xsize = 10)
-
-;set the plot type to either contour or scatter:
-bmc_contour = 1
-radiobase = widget_base(plottypesbase, /nonexclusive)
-bmc_contourbttn = widget_button(radiobase, value = 'CONTOUR ', $
-	   event_pro = 'kfme_bmc_plttp')
-widget_control, bmc_contourbttn, set_button = bmc_contour
-
-radiobase = widget_base(plottypesbase, /nonexclusive)
-bmc_scatter = 0
-bmc_scatterbttn = widget_button(radiobase, value = 'SCATTER ', $
-	   event_pro = 'kfme_bmc_plttp')
-widget_control, bmc_scatterbttn, set_button = bmc_scatter
- 
-bmc_psplotbase = widget_base(plottypesbase, /nonexclusive)
- bmc_psplotbutton = widget_button(bmc_psplotbase, $
-   value = 'SAVE2PS', $
-   event_pro = 'kfme_plotps', XSIZE=thirdcol)
-
-;SECOND COLUMN OF BOOTSTRAP MC TAB:
-plotrangebase = widget_base(planet, /col, frame =1)
-
- monte2buttn = widget_button(plotrangebase, value = 'BOOTSTRAP MC', $
-   event_pro = 'kfme_monte2', XSIZE=halfcol)
-
-bmc_xrange = [0,0]
-bmc_yrange = [0,0]
+ ;**************************************************************
+;Set non-specific variables for Bootstrap MC:
 bmc_xpar = 'e'
 bmc_ypar = 'K'
+
+;create the pointers for the chiarr and newoutarr for the 
+;bootstrap monte carlo stuff:
+bmc_newoutarr = 0
+bmc_chiarr = 0
+pbmc_newoutarr = ptr_new(bmc_newoutarr, /no_copy, /allocate)
+pbmc_chiarr = ptr_new(bmc_chiarr, /no_copy, /allocate)
+
+ ;**************************************************************
+;FIRST COLUMN OF BOOTSTRAP MC TAB:
+bmcbase1 = widget_base(planet, /col, frame =1)
+
+monte2bttn = widget_button(bmcbase1, value = 'BOOTSTRAP MC', $
+   event_pro = 'kfme_monte2')
+
+bmc_niter = 1d3
+bmcniterbase = widget_base(bmcbase1, /row)
+bmcnitertxt = widget_text(bmcniterbase, value = '# ITER:', xsize = 9)
+bmc_niterval = widget_text(bmcniterbase, $
+	 value = strt(bmc_niter), /editable, $
+ 	 event_pro = 'kfme_bmc_niter', xsize = '12')
+
+bmc_xcld = 0
+radiobase = widget_base(bmcbase1, /nonexclusive)
+bmc_xcldrlzbttn = widget_button(radiobase, value = 'EXCLUDE REALIZATIONS', $
+   event_pro = 'kfme_bmc_xcld')
+ 
+ ;**************************************************************
+;SECOND COLUMN OF BOOTSTRAP MC TAB:
+bmcbase2 = widget_base(planet, /col, frame =1)
+
+bmcplotbttn = widget_button(bmcbase2, value = 'PLOT', $
+   event_pro = 'kfme_bmc_plot')
+   
+;set the plot type to either contour or scatter:
+bmc_contour = 0
+radiobase = widget_base(bmcbase2, /nonexclusive)
+bmc_contourbttn = widget_button(radiobase, value = 'CONTOUR ', $
+	   event_pro = 'kfme_bmc_plt_cntr')
+widget_control, bmc_contourbttn, set_button = bmc_contour
+
+radiobase = widget_base(bmcbase2, /nonexclusive)
+bmc_scatter = 1
+bmc_scatterbttn = widget_button(radiobase, value = 'SCATTER ', $
+	   event_pro = 'kfme_bmc_plt_sctr')
+widget_control, bmc_scatterbttn, set_button = bmc_scatter
+ 
+bmc_psplotbase = widget_base(bmcbase2, /nonexclusive)
+ bmc_psplotbutton = widget_button(bmc_psplotbase, $
+   value = 'SAVE2PS', event_pro = 'kfme_plotps')
+
+ ;**************************************************************
+;THIRD COLUMN OF BOOTSTRAP MC TAB - RANGE & COLOR TABLE
+bmcbase3 = widget_base(planet, /col, frame =1)
+
+bmc_xranbase = widget_base(bmcbase3, /row)
+bmc_xran_set = 0
+bmc_xrange = [0,0]
+radiobase = widget_base(bmc_xranbase, /nonexclusive)
+bmc_xranbttn  = widget_button(radiobase, value = 'X RAN: ', $
+	event_pro = 'kfme_bmc_plot_xran')
+widget_control, bmc_xranbttn, set_button = bmc_xran_set
+bmc_xranval = widget_text(bmc_xranbase, $
+	 value = strt(''), /editable, $
+ 	 event_pro = 'kfme_bmc_xrange', xsize = '12')
+
+bmc_yranbase = widget_base(bmcbase3, /row)
+bmc_yran_set = 0
+bmc_yrange = [0,0]
+radiobase = widget_base(bmc_yranbase, /nonexclusive)
+bmc_yranbttn  = widget_button(radiobase, value = 'Y RAN: ', $
+	event_pro = 'kfme_bmc_plot_yran')
+widget_control, bmc_yranbase, set_button = bmc_yran_set
+bmc_yranval = widget_text(bmc_yranbase, $
+	 value = strt(''), /editable, $
+ 	 event_pro = 'kfme_bmc_yrange', xsize = '12')
+
+;color points according to their chi squared value?
+bmc_chisqcbbase = widget_base(bmcbase3, /nonexclusive)
+bmc_chisqcb = 0
+bmc_cscbnbttn  = widget_button(bmc_chisqcbbase, $
+	value = 'Chi^2 COLOR BAR', $
+	event_pro = 'kfme_bmc_cscb')
+
+bmctablebase = widget_base(bmcbase3, /row)
+bmc_ctable = 13
+bmctabletxt = widget_text(bmctablebase, value = 'COLOR TABLE:', xsize = 9)
+bmc_ctableval = widget_text(bmctablebase, $
+	 value = strt(bmc_ctable), /editable, $
+ 	 event_pro = 'kfme_bmc_ctable', xsize = '12')
+
+bmc_cranbase = widget_base(bmcbase3, /row)
+bmc_cran_set = 0
+bmc_crange = [0,0]
+radiobase = widget_base(bmc_cranbase, /nonexclusive)
+bmc_cranbttn  = widget_button(radiobase, value = 'C RAN: ', $
+	event_pro = 'kfme_bmc_plot_cran')
+widget_control, bmc_cranbase, set_button = bmc_cran_set
+bmc_cranval = widget_text(bmc_cranbase, $
+	 value = strt(''), /editable, $
+ 	 event_pro = 'kfme_bmc_crange', xsize = '12')
+
+ ;**************************************************************
+;FOURTH COLUMN OF BOOTSTRAP MC TAB - PERIOD :
+bmcbase4 = widget_base(planet, /col, frame =1)
+
+ textpar = widget_text(bmcbase4, value = 'PERIOD')
+
+
+bmc_xper = 'b'
+perxbase = widget_base(bmcbase4, /row)
+perratxtext = widget_button(perxbase, value = ' X:', xsize = 9)
+
+
+
+
 
  ;***************TABSTUFF************************************
 
@@ -12708,15 +12902,37 @@ bmc_ypar = 'K'
                slidertoppl7:slidertoppl7}
                
  
+;BootstrapMC GUI variables:
+bmc_gui = {bmc_niterval:bmc_niterval, $
+			bmc_xcldrlzbttn:bmc_xcldrlzbttn, $
+			bmc_contourbttn:bmc_contourbttn, $
+			bmc_scatterbttn:bmc_scatterbttn, $
+			bmc_psplotbutton:bmc_psplotbutton, $
+			bmc_xranbttn:bmc_xranbttn, $
+			bmc_yranbttn:bmc_yranbttn, $
+			bmc_xranval:bmc_xranval, $
+			bmc_yranval:bmc_yranval, $
+			bmc_cscbnbttn:bmc_cscbnbttn, $
+			bmc_ctableval:bmc_ctableval, $
+			bmc_cranbttn:bmc_cranbttn, $
+			bmc_cranval:bmc_cranval}
+
 ;BootstrapMC Parameters:
-bootmc = {bootmcxcld:bootmcxcld, $
-		  bmc_chiarr:bmc_chiarr, $
+bootmc = {bmc_xcld:bmc_xcld, $
+		  pbmc_chiarr:pbmc_chiarr, $
+		  bmc_chisqcb:bmc_chisqcb, $
 		  bmc_contour:bmc_contour, $
-		  bmc_newoutarr:bmc_newoutarr, $
-		  bmc_ntrial:bmc_ntrial, $
+		  bmc_cran_set:bmc_cran_set, $
+		  bmc_crange:bmc_crange, $
+		  bmc_ctable:bmc_ctable, $
+		  bmc_gui:bmc_gui, $
+		  pbmc_newoutarr:pbmc_newoutarr, $
+		  bmc_niter:bmc_niter, $
 		  bmc_psplotbutton:bmc_psplotbutton, $
 		  bmc_scatter:bmc_scatter, $
+		  bmc_xran_set:bmc_xran_set, $
 		  bmc_xrange:bmc_xrange, $
+		  bmc_yran_set:bmc_yran_set, $
 		  bmc_yrange:bmc_yrange, $
 		  bmc_xpar:bmc_xpar, $
 		  bmc_ypar:bmc_ypar}

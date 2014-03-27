@@ -125,6 +125,7 @@ endif
 
 print, 'knownstarrad is: ', knownstarrad
 print, 'mstar is: ', mstar
+print, 'mstar_unc is: ', mstar_unc
 
 ;stop
 stardat = create_struct($
@@ -144,7 +145,7 @@ stardat = create_struct($
 'lum', lum, $
 'msini', msini, $
 'mstar', mstar, $
-'unc_mstar', unc_mstar, $
+'unc_mstar', mstar_unc, $
 'om', om, $
 'plx', plx, $
 'uplx', uplx, $

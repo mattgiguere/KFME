@@ -1094,13 +1094,15 @@ pro kfme_restore_keck, newname, pstate
   endif
   print, 'extitle is: ', extitle
   norbs = stardat(extitle, pstate=pstate)  
-  ;stop
+
   if norbs.mstar gt 0 then begin
 	 (*(*pstate).pfunctargs).m_star = norbs.mstar
-	 endif else (*(*pstate).pfunctargs).m_star = 1d
-	 (*(*pstate).pfunctargs).rstar = norbs.knownstarrad
-	 (*(*pstate).pfunctargs).extitle=extitle
-	 (*pstate).ndof = 5d
+  endif else (*(*pstate).pfunctargs).m_star = 1d
+  (*(*pstate).pfunctargs).m_star_unc = norbs.unc_mstar
+  (*(*pstate).pfunctargs).rstar = norbs.knownstarrad
+  (*(*pstate).pfunctargs).rstar_unc = norbs.unc_rstar
+  (*(*pstate).pfunctargs).extitle=extitle
+  (*pstate).ndof = 5d
 ;stop
 	 widget_control, (*pstate).controlbar.smassval, $
 	 set_value=strt(norbs.mstar)
@@ -1487,7 +1489,6 @@ pro kfme_plotdata, event
   ;Retrieve the pointer to the state structure:
   widget_control, event.top, get_uvalue=pstate
   
-
   ;Ensure that the data are being plotted in the draw window:
   wset, (*pstate).win_id
 
@@ -3233,369 +3234,20 @@ newoutarr=fltarr(7*n_planets, (n_elements(outarr[1, *]) - nnans))
 for i=0,7*n_planets-1 do begin
     newoutarr[i,*]=outarr[i,notnans]
 end
-
 print, 'Nan?', where(~finite(newoutarr))
+chiarr = chiarr[notnans]
 
-t_center = dblarr(ntrial, n_planets)
-t_duration = dblarr(ntrial, n_planets)
+(*(*pstate).bootmc.pbmc_newoutarr) = newoutarr
+(*(*pstate).bootmc.pbmc_xnewoutarr) = newoutarr
+(*(*pstate).bootmc.pbmc_chiarr) = chiarr
+(*(*pstate).bootmc.pbmc_xchiarr) = chiarr
 
+;now check to see if anything should be excluded
+kfme_bmc_xcld, pstate
 
-
-;******************************************************************************
-;THIS IS THE SECTION FOR PUTTING CUTS ON THE REALIZATIONS
-;CHANGE THE GDELS WHERE STATEMENT TO CHANGE WHICH "GOOD ELEMENTS"
-;YOU WANT TO KEEP.
-;SET bootmcxcld TO 1 TO USE ONLY THE GOOD ELEMENTS
-;bootmcxcld = 0: USE ALL ELEMENTS
-;******************************************************************************
-;set bootmcxcld to 1 to exclude obvious outliers, 
-;such as the case of HD 211810
-
-if (*pstate).bootmc.bootmcxcld then begin
-  ;use the size of newoutarr to create a new array 
-  ;excluding the outlying elements:
-  sznoa = size(newoutarr)
-  ;IDL> print, sznoa
-  ;         2          14        1000           4       14000
-  ;create an incrementing array the size of the # of realizations 
-  ;for indexing:
-  gdels = lindgen(sznoa[2])
-  ;only keep realizations where the ecc < 0.94:
-  for ii=0, n_planets-1 do begin
-	;cycle through each planet, removing the realizations
-	;where any one of the planets has an e > that desired:
-	gdels = where(newoutarr[ii*7 + 2,gdels] lt 0.94, nes)
-  endfor
-  ;create a new array that will have only the good values:
-  neweroutarr = dblarr(sznoa[1], nes)
-  ;now save the good elements into that new array:
-  neweroutarr = newoutarr[*,gdels]
-  ;finally rename it to what will be used from this point on:
-  newoutarr = neweroutarr
-  print, 'Number of realizations discarded: ', sznoa[2]-nes
-  print, 'Fraction of realizations remaining: ', double(nes)/sznoa[2]
-endif;pc & i=0
-
-for i=0, n_planets-1 do begin
-
-medianper=strcompress(string(median(newoutarr[i*7 + 0,*])),/remove_all)
-pererr=strcompress(string(stdev(newoutarr[i*7 + 0,*])),/remove_all)
-
-massarr = mpf_mass(newoutarr[i*7 + 0,*], m_star, newoutarr[i*7 + 4,*], $
-            newoutarr[i*7 + 2,*], inc)
-
-medianmass=strcompress(string(median(massarr)),/remove_all)
-masserr=strcompress(string(stdev(massarr)),/remove_all)
-
-mediantp=strcompress(string(median(newoutarr[i*7 + 1,*])),/remove_all)
-tperr=strcompress(string(stdev(newoutarr[i*7 + 1,*])),/remove_all)
-
-eccarr = newoutarr[i*7 + 2,*]
-eccarr = transpose(eccarr)
-medianecc=strcompress(string(median(eccarr)),/remove_all)
-eccerr=strcompress(string(stdev(eccarr)),/remove_all)
-
-medianom=strcompress(string(median(newoutarr[i*7 + 3,*])),/remove_all)
-omerr=strcompress(string(stdev(newoutarr[i*7 + 3,*])),/remove_all)
-
-karr = newoutarr[i*7 + 4,*]
-karr = transpose(karr)
-mediank=strcompress(string(median(karr)),/remove_all)
-kerr=strcompress(string(stdev(karr)),/remove_all)
-
-mediangam=strcompress(string(median(newoutarr[i*7 + 5,*])),/remove_all)
-gamerr=strcompress(string(stdev(newoutarr[i*7 + 5,*])),/remove_all)
-
-mediandvdt=strcompress(string(median(newoutarr[i*7 + 6,*])),/remove_all)
-dvdterr=strcompress(string(stdev(newoutarr[i*7 + 6,*])),/remove_all)
-
-arelarr = ((newoutarr[i*7 + 0,*]/365.2564d)^2*m_star)^(1./3.)
-medianarel=strcompress(string(median(arelarr)),/remove_all)
-arelerr=strcompress(string(stdev(arelarr)),/remove_all)
-
-transitpars, $
-per = newoutarr[i*7 + 0,*], $
-om = newoutarr[i*7 + 3,*], $
-ecc = newoutarr[i*7 + 2,*], $
-Tp = newoutarr[i*7 + 1,*], $
-msini = massarr, $
-t_cen = t_center, $
-t_dur = t_duration
-
-
-mediantcen=strcompress(string(median(t_center)),/remove_all)
-
-x = where(t_center lt (mediantcen - medianper/2d), offbyper)
-if offbyper gt 0 then t_center[x] += period[i]
-
-x = where(t_center gt  (mediantcen + medianper/2d), offbyper)
-if offbyper gt 0 then t_center[x] -= period[i]
-
-mediantcen=strcompress(string(median(t_center)),/remove_all)
-tcenerr=strcompress(string(stdev(t_center)),/remove_all)
-
-mediantdur=strcompress(string(median(t_duration)),/remove_all)
-tdurerr=strcompress(string(stdev(t_duration)),/remove_all)
-
-bfk = mpf_K(a_pl, m_pl_earth, period, m_star, inc, ecc)
-
-;i is the planet number:
-case i of
-  0: vals = (*pstate).pars.par1.value
-  1: vals = (*pstate).pars.par2.value
-  2: vals = (*pstate).pars.par3.value
-  3: vals = (*pstate).pars.par4.value
-  4: vals = (*pstate).pars.par5.value
-  5: vals = (*pstate).pars.par6.value
-  6: vals = (*pstate).pars.par7.value
-endcase
-
-bfper = vals[0]
-bfmsini = vals[1]
-bfecc = vals[2] 
-bfom = vals[3] 
-bftp = vals[4] 
-bfgam = vals[5] 
-bfdvdt = vals[6] 
-
-bfapl = a_pl[i]
-bfk = bfk[i]
-
-transitpars, $
-per = bfper, $
-om = bfom, $
-ecc = bfecc, $
-Tp = bftp, $
-msini = bfmsini / 5.9742d24, $
-t_cen = bftcen, $
-t_dur = bftdur
-bft_cenjd = jul2cal(bftcen + 2.44d6)
-
-transit_prob2, $
-a_au = bfapl, $
-r_rsun = r_rsun, $
-ecc = bfecc, $
-om = bfom, $
-tprob = bftprob, $
-/noprint
-
-print, '*******************************************'
-print, 'Best-fit parameters with Bootstrap MC '
-print, 'uncertainties for planet ',strt(i+1)
-print, '*******************************************'
-print,'Per: '+strt(bfper)+' +/- '+pererr, ' days'
-print,'Tp: '+strt(bftp)+' +/- '+tperr, ' HJD'
-print,'Ecc: '+strt(bfecc)+' +/- '+eccerr
-print,'Om: '+strt(bfom)+' +/- '+omerr, ' degrees'
-print,'K: '+strt(bfk)+' +/- '+kerr, ' m/s'
-print,'gam: '+strt(bfgam)+' +/- '+gamerr, ' m/s'
-print,'dvdt: '+strt(bfdvdt*365.25)+' +/- '+strt(double(dvdterr)*365.25), ' m/s/yr'
-print,'msini: ', strt(bfmsini)+' +/- '+masserr, ' M_Earth'
-print,'a_pl: ', strt(bfapl)+' +/- '+arelerr, ' AU'
-print,'t_center: ', strt(bftcen)+' +/- '+tcenerr, ' HJD'
-print,'t_dur: ', strt(bftdur)+' +/- '+strt(tdurerr, f='(F10.5)')+' hrs'
-print, 'tprob: ', strt(bftprob), ' %'
-print, ' t_c: ', bft_cenjd
-
-print, '' & print, ''
-
-;endif
-
-if i eq 0 then begin
-  (*pstate).pars.par1[0].error = pererr
-  (*pstate).pars.par1[1].error = masserr
-  (*pstate).pars.par1[2].error = eccerr
-  (*pstate).pars.par1[3].error = omerr
-  (*pstate).pars.par1[4].error = tperr
-  (*pstate).pars.par1[5].error = gamerr
-  (*pstate).pars.par1[6].error = dvdterr
-  (*pstate).pars.par1[10].error = kerr
-  (*pstate).pars.par1[11].error = arelerr
-endif ;store uncertainties for planet 1
-
-if i eq 1 then begin
-  (*pstate).pars.par2[0].error = pererr
-  (*pstate).pars.par2[1].error = masserr
-  (*pstate).pars.par2[2].error = eccerr
-  (*pstate).pars.par2[3].error = omerr
-  (*pstate).pars.par2[4].error = tperr
-  (*pstate).pars.par2[5].error = kerr
-  (*pstate).pars.par2[6].error = arelerr
-endif ;store uncertainties for planet 2
-
-if i eq 2 then begin
-  (*pstate).pars.par3[0].error = pererr
-  (*pstate).pars.par3[1].error = masserr
-  (*pstate).pars.par3[2].error = eccerr
-  (*pstate).pars.par3[3].error = omerr
-  (*pstate).pars.par3[4].error = tperr
-  (*pstate).pars.par3[5].error = kerr
-  (*pstate).pars.par3[6].error = arelerr
-endif ;store uncertainties for planet 3
-
-if i eq 3 then begin
-  (*pstate).pars.par4[0].error = pererr
-  (*pstate).pars.par4[1].error = masserr
-  (*pstate).pars.par4[2].error = eccerr
-  (*pstate).pars.par4[3].error = omerr
-  (*pstate).pars.par4[4].error = tperr
-  (*pstate).pars.par4[5].error = kerr
-  (*pstate).pars.par4[6].error = arelerr
-endif ;store uncertainties for planet 4
-
-if i eq 4 then begin
-  (*pstate).pars.par5[0].error = pererr
-  (*pstate).pars.par5[1].error = masserr
-  (*pstate).pars.par5[2].error = eccerr
-  (*pstate).pars.par5[3].error = omerr
-  (*pstate).pars.par5[4].error = tperr
-  (*pstate).pars.par5[5].error = kerr
-  (*pstate).pars.par5[6].error = arelerr
-endif ;store uncertainties for planet 5
-
-if i eq 5 then begin
-  (*pstate).pars.par6[0].error = pererr
-  (*pstate).pars.par6[1].error = masserr
-  (*pstate).pars.par6[2].error = eccerr
-  (*pstate).pars.par6[3].error = omerr
-  (*pstate).pars.par6[4].error = tperr
-  (*pstate).pars.par6[5].error = kerr
-  (*pstate).pars.par6[6].error = arelerr
-endif ;store uncertainties for planet 6
-
-if i eq 6 then begin
-  (*pstate).pars.par7[0].error = pererr
-  (*pstate).pars.par7[1].error = masserr
-  (*pstate).pars.par7[2].error = eccerr
-  (*pstate).pars.par7[3].error = omerr
-  (*pstate).pars.par7[4].error = tperr
-  (*pstate).pars.par7[5].error = kerr
-  (*pstate).pars.par7[6].error = arelerr
-endif ;store uncertainties for planet 7
-
-
-
-;print,'Mean RMS: ',median(newoutarr[7,*])
-;print,'Mean chisq: ',median(newoutarr[8,*])
-
-endfor
-
-;**********************************************************************
-;                     BEGIN CONTOUR SECTION
-;**********************************************************************
-loadct, 39, /silent
-plot, eccarr, karr, ps=8, xtitle='Eccentricity', $
-ytitle='K [m s!u-1!n]'
-
-noasz = size(newoutarr)
-for i=0, noasz[2] - 1 do oplot, [eccarr[i], eccarr[i]], $
-[karr[i],karr[i]], color=round(chiarr[i]*100d), ps=8
-
-wait, 3
-xnel = 5d1
-ynelmax = 5d1
-buf = 2d
-ynel = ynelmax < CEIL((max(karr)))
-yfac = CEIL((max(karr) ))/ynelmax > 1d
-pargrid = dblarr(xnel+ 2d * buf, ynel + 2d * buf)
-numgrid =pargrid
-chigrid = pargrid
-meangrid = chigrid
-
-for i=0,noasz[2]-1 do begin
-  numgrid[round(eccarr[i]*xnel) +buf, floor((karr[i] )/yfac) +buf] += 1
-  chigrid[round(eccarr[i]*xnel) + buf, floor((karr[i])/yfac) + buf] += $
-	 chiarr[i]
-endfor
-
-
-values = where(numgrid ne 0)
-meangrid[values] = chigrid[values] / numgrid[values]
-
-;**********************************************************************
-;    NOW TO PLOT THE CONTOURS FOR CHI SQ:
-;**********************************************************************
-numlvls = 20
-levels = (dindgen(numlvls-1)+ 1d)*max(meangrid*100)/numlvls
-
-contour, meangrid*1d2, dindgen(xnel+2d * buf)/(xnel - 1d) - buf/xnel, $
-dindgen(ynel + 2d * buf)*yfac - buf*yfac, $
-xtitle='Eccentricity', $
-ytitle='K [m s!u-1!n]', $
-/xsty, xran=[-buf/xnel, 1 + 2d / xnel], $
-/yst, yran=[-buf*yfac, max(karr) + buf*yfac], $
-c_colors = dindgen(numlvls)*254/numlvls, /fill, $
-POSITION=[0.3, 0.1, 0.95, 0.95], $
-levels=levels
-
- ncolors=254.
- loc = [0.1, 0.10, 0.15, 0.95]
- bar = REPLICATE(1B, 10) # BINDGEN(256) 
- xsize = (loc(2) - loc(0)) * !D.X_VSIZE
- ysize = (loc(3) - loc(1)) * !D.Y_VSIZE 
- xstart = loc(0) * !D.X_VSIZE
- ystart = loc(1) * !D.Y_VSIZE 
- bar = BYTSCL(bar, TOP=ncolors-1)
- IF !D.NAME EQ 'PS' THEN $
-      TV, bar, xstart, ystart, XSIZE=xsize, YSIZE=ysize ELSE $
-      TV, CONGRID(bar, xsize, ysize), xstart, ystart
- PLOTS, [loc(0), loc(0), loc(2), loc(2), loc(0)], $
-       [loc(1), loc(3), loc(3), loc(1), loc(1)], /NORMAL
-       
- minrange = 0
- maxrange = max(meangrid)
- title = ''
- ytitle=greek('chi')+'!d'+greek('nu')+'!n'+'!u2!n'
- position=loc
- divisions=6
- PLOT, [minrange, maxrange], [minrange, maxrange], /nodata, $
- XTICKS=1, YTICKS=divisions, XSTYLE=1, YSTYLE=1, TITLE=title, $
- POSITION=position, COLOR=color, CHARSIZE=charsize, /NOERASE, $
- YTICKFORMAT=format, XTICKFORMAT='(A1)', YTICKLEN=ticklen, $
- YRANGE=[minrange, maxrange], FONT=font, YMinor=minor, _STRICT_EXTRA=extra, $
- YTICKNAME=ticknames, YLOG=ylog, XTITLE="", YTITLE=ytitle
-
-;**********************************************************************
-;NOW TO PLOT THE CONTOURS FOR # REALIZATIONS IN THAT PARAMETER SPACE:
-;**********************************************************************
-
-if !d.name eq 'PS' then ylow = 0.2 else ylow = 0.1
-if !d.name eq 'PS' then xlow = 0.35 else xlow = 0.3
-levels2 = (dindgen(numlvls-1)+ 1d)*max(numgrid*10)/numlvls
-contour, numgrid*10d, dindgen(xnel+2d * buf)/(xnel - 1d) - buf/xnel, $
-dindgen(ynel + 2d * buf)*yfac - buf*yfac, $
-xtitle='Eccentricity', $
-ytitle='K [m s!u-1!n]', $
-/xsty, xran=[-buf/xnel, 1 + 2d / xnel], $
-/yst, yran=[-buf*yfac, max(karr) + buf*yfac], $
-c_colors = dindgen(numlvls)*254/numlvls, /fill, $
-POSITION=[xlow, ylow, 0.95, 0.95], $
-levels=levels2
-
- ncolors=254.
- loc = [xlow-0.2, ylow, xlow-0.15, 0.95]
- bar = REPLICATE(1B, 10) # BINDGEN(256) 
- xsize = (loc(2) - loc(0)) * !D.X_VSIZE
- ysize = (loc(3) - loc(1)) * !D.Y_VSIZE 
- xstart = loc(0) * !D.X_VSIZE
- ystart = loc(1) * !D.Y_VSIZE 
- bar = BYTSCL(bar, TOP=ncolors-1)
- IF !D.NAME EQ 'PS' THEN $
-      TV, bar, xstart, ystart, XSIZE=xsize, YSIZE=ysize ELSE $
-      TV, CONGRID(bar, xsize, ysize), xstart, ystart
- PLOTS, [loc(0), loc(0), loc(2), loc(2), loc(0)], $
-       [loc(1), loc(3), loc(3), loc(1), loc(1)], /NORMAL
-       
- maxrange = max(numgrid)
- title = ''
- ytitle='# Realizations'
- PLOT, [minrange, maxrange], [minrange, maxrange], /nodata, $
- XTICKS=1, YTICKS=divisions, XSTYLE=1, YSTYLE=1, TITLE=title, $
- POSITION=loc, COLOR=color, CHARSIZE=charsize, /NOERASE, $
- YTICKFORMAT=format, XTICKFORMAT='(A1)', YTICKLEN=ticklen, $
- YRANGE=[minrange, maxrange], FONT=font, YMinor=minor, _STRICT_EXTRA=extra, $
- YTICKNAME=ticknames, YLOG=ylog, XTITLE="", YTITLE=ytitle
-stop
+;print the parameters and uncertainties to screen, 
+;taking into account newly excluded values:
+kfme_bmc_printpars, pstate
 end;kfme_monte2.pro
 
 pro kfme_saveresid, event
@@ -9684,24 +9336,540 @@ pro kfme_bmc_niter, event
   print, '# of BMC Realizations: ', newlim
 end;kfme_bmc_niter.pro
 
- pro kfme_bmc_xcld, event
+ pro kfme_bmc_xcld_set, event
   ;Retrieve the pointer to the state structure:
   widget_control, event.top, get_uvalue=pstate
   
   print, 'Exclude Bootstrap MC Realizations?', event.select
   ;change the bmc_xcld value:
   (*pstate).bootmc.bmc_xcld = event.select
+  kfme_bmc_xcld, pstate
+end;kfme_bmc_xcld_set.pro
+
+pro kfme_bmc_xcld, pstate
+ if (*pstate).bootmc.bmc_xcld then begin
+  print, 'Now excluding realizations'
+ 
+  newoutarr = (*(*pstate).bootmc.pbmc_newoutarr)
+  chiarr = (*(*pstate).bootmc.pbmc_chiarr)
+  ;use the size of newoutarr to create a new array 
+  ;excluding the outlying elements:
+  sznoa = size(newoutarr)
+  ;IDL> print, sznoa
+  ;         2          14        1000           4       14000
+  ;create an incrementing array the size of the # of realizations 
+  ;for indexing:
+  gdels = lindgen(sznoa[2])
+
+  ;only keep realizations that meet the criteria:
+  for ii=0, n_planets-1 do begin
+	;cycle through each planet, removing the realizations
+
+	;remove periods if low limit set
+	if (*pstate).bootmc.bmc_perlolim_set then begin
+		gdels = where(newoutarr[ii*7 + 0,gdels] ge $
+			(*pstate).bootmc.bmc_perlolim, nes)
+	endif;perlolim
+   
+	;remove periods if high limit set
+	if (*pstate).bootmc.bmc_perhilim_set then begin
+		gdels = where(newoutarr[ii*7 + 0,gdels] le $
+			(*pstate).bootmc.bmc_perhilim, nes)
+	endif;perhilim
+   
+	;remove by ecc if low limit set
+	if (*pstate).bootmc.bmc_ecclolim_set then begin
+		gdels = where(newoutarr[ii*7 + 2,gdels] ge $
+			(*pstate).bootmc.bmc_ecclolim, nes)
+	endif;ecclolim
+   
+	;remove by ecc if high limit set
+	if (*pstate).bootmc.bmc_ecchilim_set then begin
+		gdels = where(newoutarr[ii*7 + 2,gdels] le $
+			(*pstate).bootmc.bmc_ecchilim, nes)
+	endif;ecchilim
+   
+	;remove by k if low limit set
+	if (*pstate).bootmc.bmc_ksalolim_set then begin
+		gdels = where(newoutarr[ii*7 + 4,gdels] ge $
+			(*pstate).bootmc.bmc_ksalolim, nes)
+	endif;ksalolim
+   
+	;remove by k if high limit set
+	if (*pstate).bootmc.bmc_ksahilim_set then begin
+		gdels = where(newoutarr[ii*7 + 4,gdels] le $
+			(*pstate).bootmc.bmc_ksahilim, nes)
+	endif;ksahilim
+  endfor;loop through planets
+  ;create a new array that will have only the good values:
+  neweroutarr = dblarr(sznoa[1], nes)
+  ;now save the good elements into new arrays:
+  neweroutarr = newoutarr[*,gdels]
+  newchiarr = chiarr[gdels]
+ 
+  ;finally make them pointers and save them to the structure
+  (*(*pstate).bootmc.pbmc_xnewoutarr) = ptr_new(neweroutarr, /no_copy, /alloc)
+  (*(*pstate).bootmc.pbmc_xchiarr) = ptr_new(newchiarr, /no_copy, /alloc)
+  print, 'Number of realizations discarded: ', sznoa[2]-nes
+  print, 'Fraction of realizations remaining: ', double(nes)/sznoa[2]
+  endif;xcld=1
+  
+  kfme_bmc_printpars, pstate
+  kfme_bmc_plot, pstate
 end;kfme_bmc_xcld.pro
 
-pro kfme_bmc_plot, event
+pro kfme_bmc_printpars, pstate
+   ;Print the best-fit parameters and associated uncertainties 
+   ;to screen
+
+n_planets=(*(*pstate).pfunctargs).n_planets
+m_star = (*(*pstate).pfunctargs).m_star
+m_star_unc = (*(*pstate).pfunctargs).m_star_unc
+r_star = (*(*pstate).pfunctargs).rstar
+r_star_unc = (*(*pstate).pfunctargs).rstar_unc
+ntrial = n_elements((*(*pstate).bootmc.pbmc_xchiarr))
+m_star_arr = m_star_unc*randomn(seed, ntrial) + m_star
+r_star_arr = r_star_unc*randomn(seed, ntrial) + r_star
+newoutarr = (*(*pstate).bootmc.pbmc_xnewoutarr)
+chiarr = (*(*pstate).bootmc.pbmc_xchiarr)
+inc = 89.9d
+
+t_center = dblarr(ntrial, n_planets)
+t_duration = dblarr(ntrial, n_planets)
+
+for i=0, n_planets-1 do begin
+
+medianper=strcompress(string(median(newoutarr[i*7 + 0,*])),/remove_all)
+pererr=strcompress(string(stdev(newoutarr[i*7 + 0,*])),/remove_all)
+
+massarr = mpf_mass(newoutarr[i*7 + 0,*], m_star_arr, newoutarr[i*7 + 4,*], $
+            newoutarr[i*7 + 2,*], inc)
+
+medianmass=strcompress(string(median(massarr)),/remove_all)
+masserr=strcompress(string(stdev(massarr)),/remove_all)
+
+mediantp=strcompress(string(median(newoutarr[i*7 + 1,*])),/remove_all)
+tperr=strcompress(string(stdev(newoutarr[i*7 + 1,*])),/remove_all)
+
+eccarr = newoutarr[i*7 + 2,*]
+eccarr = transpose(eccarr)
+medianecc=strcompress(string(median(eccarr)),/remove_all)
+eccerr=strcompress(string(stdev(eccarr)),/remove_all)
+
+medianom=strcompress(string(median(newoutarr[i*7 + 3,*])),/remove_all)
+omerr=strcompress(string(stdev(newoutarr[i*7 + 3,*])),/remove_all)
+
+karr = newoutarr[i*7 + 4,*]
+karr = transpose(karr)
+mediank=strcompress(string(median(karr)),/remove_all)
+kerr=strcompress(string(stdev(karr)),/remove_all)
+
+mediangam=strcompress(string(median(newoutarr[i*7 + 5,*])),/remove_all)
+gamerr=strcompress(string(stdev(newoutarr[i*7 + 5,*])),/remove_all)
+
+mediandvdt=strcompress(string(median(newoutarr[i*7 + 6,*])),/remove_all)
+dvdterr=strcompress(string(stdev(newoutarr[i*7 + 6,*])),/remove_all)
+
+arelarr = ((newoutarr[i*7 + 0,*]/365.2564d)^2*m_star_arr)^(1./3.)
+medianarel=strcompress(string(median(arelarr)),/remove_all)
+arelerr=strcompress(string(stdev(arelarr)),/remove_all)
+
+transitpars, $
+per = newoutarr[i*7 + 0,*], $
+om = newoutarr[i*7 + 3,*], $
+ecc = newoutarr[i*7 + 2,*], $
+Tp = newoutarr[i*7 + 1,*], $
+msini = massarr, $
+t_cen = t_center, $
+t_dur = t_duration, $
+m_star = m_star_arr, $
+r_star = r_star_arr
+
+mediantcen=strcompress(string(median(t_center)),/remove_all)
+
+
+;i is the planet number:
+case i of
+  0: vals = (*pstate).pars.par1.value
+  1: vals = (*pstate).pars.par2.value
+  2: vals = (*pstate).pars.par3.value
+  3: vals = (*pstate).pars.par4.value
+  4: vals = (*pstate).pars.par5.value
+  5: vals = (*pstate).pars.par6.value
+  6: vals = (*pstate).pars.par7.value
+endcase
+
+bfper = vals[0]
+bfmsini = vals[1]
+bfecc = vals[2] 
+bfom = vals[3] 
+bftp = vals[4] 
+bfgam = vals[5] 
+bfdvdt = vals[6] 
+bfapl =((bfper/365.2564d)^2*m_star)^(1./3.)
+bfk = mpf_K(bfapl, bfmsini, bfper, m_star, inc, bfecc)
+
+x = where(t_center lt (mediantcen - medianper/2d), offbyper)
+if offbyper gt 0 then t_center[x] += bfper[i]
+
+x = where(t_center gt  (mediantcen + bfper/2d), offbyper)
+if offbyper gt 0 then t_center[x] -= bfper[i]
+
+mediantcen=strcompress(string(median(t_center)),/remove_all)
+tcenerr=strcompress(string(stdev(t_center)),/remove_all)
+
+mediantdur=strcompress(string(median(t_duration)),/remove_all)
+tdurerr=strcompress(string(stdev(t_duration)),/remove_all)
+
+transitpars, $
+per = bfper, $
+om = bfom, $
+ecc = bfecc, $
+Tp = bftp, $
+msini = bfmsini, $
+t_cen = bftcen, $
+t_dur = bftdur, $
+m_star = m_star_arr, $
+r_star = r_star_arr
+
+bft_cenjd = jul2cal(bftcen + 2.44d6)
+
+transit_prob2, $
+a_au = bfapl, $
+r_rsun = r_rsun, $
+ecc = bfecc, $
+om = bfom, $
+tprob = bftprob, $
+/noprint
+
+print, '*******************************************'
+print, 'Best-fit parameters with Bootstrap MC '
+print, 'uncertainties for planet ',strt(i+1)
+print, '*******************************************'
+print,'Per: '+strt(bfper)+' +/- '+pererr, ' days'
+print,'Tp: '+strt(bftp)+' +/- '+tperr, ' HJD'
+print,'Ecc: '+strt(bfecc)+' +/- '+eccerr
+print,'Om: '+strt(bfom)+' +/- '+omerr, ' degrees'
+print,'K: '+strt(bfk)+' +/- '+kerr, ' m/s'
+print,'gam: '+strt(bfgam)+' +/- '+gamerr, ' m/s'
+print,'dvdt: '+strt(bfdvdt*365.25)+' +/- '+strt(double(dvdterr)*365.25), ' m/s/yr'
+print,'msini: ', strt(bfmsini)+' +/- '+masserr, ' M_Earth'
+print,'a_pl: ', strt(bfapl)+' +/- '+arelerr, ' AU'
+print,'t_center: ', strt(bftcen)+' +/- '+tcenerr, ' HJD'
+print,'t_dur: ', strt(bftdur)+' +/- '+strt(tdurerr, f='(F10.5)')+' hrs'
+print, 'tprob: ', strt(bftprob), ' %'
+print, ' t_c: ', bft_cenjd
+print, '' & print, ''
+
+if i eq 0 then begin
+  (*pstate).pars.par1[0].error = pererr
+  (*pstate).pars.par1[1].error = masserr
+  (*pstate).pars.par1[2].error = eccerr
+  (*pstate).pars.par1[3].error = omerr
+  (*pstate).pars.par1[4].error = tperr
+  (*pstate).pars.par1[5].error = gamerr
+  (*pstate).pars.par1[6].error = dvdterr
+  (*pstate).pars.par1[10].error = kerr
+  (*pstate).pars.par1[11].error = arelerr
+endif ;store uncertainties for planet 1
+
+if i eq 1 then begin
+  (*pstate).pars.par2[0].error = pererr
+  (*pstate).pars.par2[1].error = masserr
+  (*pstate).pars.par2[2].error = eccerr
+  (*pstate).pars.par2[3].error = omerr
+  (*pstate).pars.par2[4].error = tperr
+  (*pstate).pars.par2[5].error = kerr
+  (*pstate).pars.par2[6].error = arelerr
+endif ;store uncertainties for planet 2
+
+if i eq 2 then begin
+  (*pstate).pars.par3[0].error = pererr
+  (*pstate).pars.par3[1].error = masserr
+  (*pstate).pars.par3[2].error = eccerr
+  (*pstate).pars.par3[3].error = omerr
+  (*pstate).pars.par3[4].error = tperr
+  (*pstate).pars.par3[5].error = kerr
+  (*pstate).pars.par3[6].error = arelerr
+endif ;store uncertainties for planet 3
+
+if i eq 3 then begin
+  (*pstate).pars.par4[0].error = pererr
+  (*pstate).pars.par4[1].error = masserr
+  (*pstate).pars.par4[2].error = eccerr
+  (*pstate).pars.par4[3].error = omerr
+  (*pstate).pars.par4[4].error = tperr
+  (*pstate).pars.par4[5].error = kerr
+  (*pstate).pars.par4[6].error = arelerr
+endif ;store uncertainties for planet 4
+
+if i eq 4 then begin
+  (*pstate).pars.par5[0].error = pererr
+  (*pstate).pars.par5[1].error = masserr
+  (*pstate).pars.par5[2].error = eccerr
+  (*pstate).pars.par5[3].error = omerr
+  (*pstate).pars.par5[4].error = tperr
+  (*pstate).pars.par5[5].error = kerr
+  (*pstate).pars.par5[6].error = arelerr
+endif ;store uncertainties for planet 5
+
+if i eq 5 then begin
+  (*pstate).pars.par6[0].error = pererr
+  (*pstate).pars.par6[1].error = masserr
+  (*pstate).pars.par6[2].error = eccerr
+  (*pstate).pars.par6[3].error = omerr
+  (*pstate).pars.par6[4].error = tperr
+  (*pstate).pars.par6[5].error = kerr
+  (*pstate).pars.par6[6].error = arelerr
+endif ;store uncertainties for planet 6
+
+if i eq 6 then begin
+  (*pstate).pars.par7[0].error = pererr
+  (*pstate).pars.par7[1].error = masserr
+  (*pstate).pars.par7[2].error = eccerr
+  (*pstate).pars.par7[3].error = omerr
+  (*pstate).pars.par7[4].error = tperr
+  (*pstate).pars.par7[5].error = kerr
+  (*pstate).pars.par7[6].error = arelerr
+endif ;store uncertainties for planet 7
+endfor;loop through planets
+end;kfme_bmc_printpars.pro
+
+pro kfme_bmc_plotdata, event
   ;Retrieve the pointer to the state structure:
-  widget_control, event.id, get_value=newlim
   widget_control, event.top, get_uvalue=pstate
   
-  plot, findgen(50), /nodata
-  xyouts, 'Work in progress...', 0.5, 0.5, /normal
-  print, 'Work in progress...'
+  ;Print uncertainties to screen:
+  kfme_bmc_printpars, pstate
   
+  ;Call the "do" routine:
+  kfme_bmc_plot, pstate
+end ;kfme_plotdata.pro
+
+pro kfme_bmc_plot, pstate
+;restore the bootmc results
+newoutarr = (*(*pstate).bootmc.pbmc_xnewoutarr)
+chiarr = (*(*pstate).bootmc.pbmc_xchiarr)  
+
+;**********************************************************************
+;                     DETERMINE WHAT TO PLOT
+;**********************************************************************
+xarr = -1 & xtitle=''
+yarr = -1 & ytitle=''
+
+;x-options
+if (*pstate).bootmc.bmc_perx_set then begin
+  case strt((*pstate).bootmc.bmc_plot_perx) of
+	'b': xarr = newoutarr[0*7 + 0,*]
+	'c': xarr = newoutarr[1*7 + 0,*]
+	'd': xarr = newoutarr[2*7 + 0,*]
+	'e': xarr = newoutarr[3*7 + 0,*]
+	'f': xarr = newoutarr[4*7 + 0,*]
+	'g': xarr = newoutarr[5*7 + 0,*]
+	'h': xarr = newoutarr[6*7 + 0,*]
+  endcase
+  xtitle = 'Period '+strt((*pstate).bootmc.bmc_plot_perx)+' [d]'
+endif
+
+if (*pstate).bootmc.bmc_eccx_set then begin
+  case strt((*pstate).bootmc.bmc_plot_eccx) of
+	'b': xarr = newoutarr[0*7 + 2,*]
+	'c': xarr = newoutarr[1*7 + 2,*]
+	'd': xarr = newoutarr[2*7 + 2,*]
+	'e': xarr = newoutarr[3*7 + 2,*]
+	'f': xarr = newoutarr[4*7 + 2,*]
+	'g': xarr = newoutarr[5*7 + 2,*]
+	'h': xarr = newoutarr[6*7 + 2,*]
+  endcase
+  xtitle = 'Eccentricity '+strt((*pstate).bootmc.bmc_plot_eccx)
+endif
+
+if (*pstate).bootmc.bmc_ksax_set then begin
+  case strt((*pstate).bootmc.bmc_plot_ksax) of
+	'b': xarr = newoutarr[0*7 + 4,*]
+	'c': xarr = newoutarr[1*7 + 4,*]
+	'd': xarr = newoutarr[2*7 + 4,*]
+	'e': xarr = newoutarr[3*7 + 4,*]
+	'f': xarr = newoutarr[4*7 + 4,*]
+	'g': xarr = newoutarr[5*7 + 4,*]
+	'h': xarr = newoutarr[6*7 + 4,*]
+  endcase
+  xtitle = 'K '+strt((*pstate).bootmc.bmc_plot_ksax)+' [m s!u-1!n]'
+endif
+
+;y-options
+if (*pstate).bootmc.bmc_pery_set then begin
+  case strt((*pstate).bootmc.bmc_plot_pery) of
+	'b': yarr = newoutarr[0*7 + 0,*]
+	'c': yarr = newoutarr[1*7 + 0,*]
+	'd': yarr = newoutarr[2*7 + 0,*]
+	'e': yarr = newoutarr[3*7 + 0,*]
+	'f': yarr = newoutarr[4*7 + 0,*]
+	'g': yarr = newoutarr[5*7 + 0,*]
+	'h': yarr = newoutarr[6*7 + 0,*]
+  endcase
+  xtitle = 'Period '+strt((*pstate).bootmc.bmc_plot_pery)+' [d]'
+endif
+
+if (*pstate).bootmc.bmc_eccy_set then begin
+  case strt((*pstate).bootmc.bmc_plot_eccy) of
+	'b': yarr = newoutarr[0*7 + 2,*]
+	'c': yarr = newoutarr[1*7 + 2,*]
+	'd': yarr = newoutarr[2*7 + 2,*]
+	'e': yarr = newoutarr[3*7 + 2,*]
+	'f': yarr = newoutarr[4*7 + 2,*]
+	'g': yarr = newoutarr[5*7 + 2,*]
+	'h': yarr = newoutarr[6*7 + 2,*]
+  endcase
+  xtitle = 'Eccentricity '+strt((*pstate).bootmc.bmc_plot_eccy)
+endif
+
+if (*pstate).bootmc.bmc_ksay_set then begin
+  case strt((*pstate).bootmc.bmc_plot_ksay) of
+	'b': yarr = newoutarr[0*7 + 4,*]
+	'c': yarr = newoutarr[1*7 + 4,*]
+	'd': yarr = newoutarr[2*7 + 4,*]
+	'e': yarr = newoutarr[3*7 + 4,*]
+	'f': yarr = newoutarr[4*7 + 4,*]
+	'g': yarr = newoutarr[5*7 + 4,*]
+	'h': yarr = newoutarr[6*7 + 4,*]
+  endcase
+  ytitle = 'K '+strt((*pstate).bootmc.bmc_plot_ksay)+' [m s!u-1!n]'
+endif
+
+
+;**********************************************************************
+;                     BEGIN COLORBAR SECTION
+;**********************************************************************
+if (*pstate).bootmc.bmc_chisqcb then begin
+loadct, (*pstate).bootmc.bmc_ctable
+endif
+
+;**********************************************************************
+;                     BEGIN SCATTER SECTION
+;**********************************************************************
+stop
+if (*pstate).bootmc.bmc_scatter then begin
+  plot, xarr, yarr, ps=8, xtitle=xtitle, $
+  ytitle=ytitle
+endif;scatter set
+
+;**********************************************************************
+;                     BEGIN CONTOUR SECTION
+;**********************************************************************
+if (*pstate).bootmc.bmc_contour then begin
+
+
+noasz = size(newoutarr)
+for i=0, noasz[2] - 1 do oplot, [eccarr[i], eccarr[i]], $
+[karr[i],karr[i]], color=round(chiarr[i]*100d), ps=8
+
+wait, 3
+xnel = 5d1
+ynelmax = 5d1
+buf = 2d
+ynel = ynelmax < CEIL((max(karr)))
+yfac = CEIL((max(karr) ))/ynelmax > 1d
+pargrid = dblarr(xnel+ 2d * buf, ynel + 2d * buf)
+numgrid =pargrid
+chigrid = pargrid
+meangrid = chigrid
+
+for i=0,noasz[2]-1 do begin
+  numgrid[round(eccarr[i]*xnel) +buf, floor((karr[i] )/yfac) +buf] += 1
+  chigrid[round(eccarr[i]*xnel) + buf, floor((karr[i])/yfac) + buf] += $
+	 chiarr[i]
+endfor
+
+
+values = where(numgrid ne 0)
+meangrid[values] = chigrid[values] / numgrid[values]
+
+;**********************************************************************
+;    NOW TO PLOT THE CONTOURS FOR CHI SQ:
+;**********************************************************************
+numlvls = 20
+levels = (dindgen(numlvls-1)+ 1d)*max(meangrid*100)/numlvls
+
+contour, meangrid*1d2, dindgen(xnel+2d * buf)/(xnel - 1d) - buf/xnel, $
+dindgen(ynel + 2d * buf)*yfac - buf*yfac, $
+xtitle='Eccentricity', $
+ytitle='K [m s!u-1!n]', $
+/xsty, xran=[-buf/xnel, 1 + 2d / xnel], $
+/yst, yran=[-buf*yfac, max(karr) + buf*yfac], $
+c_colors = dindgen(numlvls)*254/numlvls, /fill, $
+POSITION=[0.3, 0.1, 0.95, 0.95], $
+levels=levels
+
+ ncolors=254.
+ loc = [0.1, 0.10, 0.15, 0.95]
+ bar = REPLICATE(1B, 10) # BINDGEN(256) 
+ xsize = (loc(2) - loc(0)) * !D.X_VSIZE
+ ysize = (loc(3) - loc(1)) * !D.Y_VSIZE 
+ xstart = loc(0) * !D.X_VSIZE
+ ystart = loc(1) * !D.Y_VSIZE 
+ bar = BYTSCL(bar, TOP=ncolors-1)
+ IF !D.NAME EQ 'PS' THEN $
+      TV, bar, xstart, ystart, XSIZE=xsize, YSIZE=ysize ELSE $
+      TV, CONGRID(bar, xsize, ysize), xstart, ystart
+ PLOTS, [loc(0), loc(0), loc(2), loc(2), loc(0)], $
+       [loc(1), loc(3), loc(3), loc(1), loc(1)], /NORMAL
+       
+ minrange = 0
+ maxrange = max(meangrid)
+ title = ''
+ ytitle=greek('chi')+'!d'+greek('nu')+'!n'+'!u2!n'
+ position=loc
+ divisions=6
+ PLOT, [minrange, maxrange], [minrange, maxrange], /nodata, $
+ XTICKS=1, YTICKS=divisions, XSTYLE=1, YSTYLE=1, TITLE=title, $
+ POSITION=position, COLOR=color, CHARSIZE=charsize, /NOERASE, $
+ YTICKFORMAT=format, XTICKFORMAT='(A1)', YTICKLEN=ticklen, $
+ YRANGE=[minrange, maxrange], FONT=font, YMinor=minor, _STRICT_EXTRA=extra, $
+ YTICKNAME=ticknames, YLOG=ylog, XTITLE="", YTITLE=ytitle
+
+;**********************************************************************
+;NOW TO PLOT THE CONTOURS FOR # REALIZATIONS IN THAT PARAMETER SPACE:
+;**********************************************************************
+
+if !d.name eq 'PS' then ylow = 0.2 else ylow = 0.1
+if !d.name eq 'PS' then xlow = 0.35 else xlow = 0.3
+levels2 = (dindgen(numlvls-1)+ 1d)*max(numgrid*10)/numlvls
+contour, numgrid*10d, dindgen(xnel+2d * buf)/(xnel - 1d) - buf/xnel, $
+dindgen(ynel + 2d * buf)*yfac - buf*yfac, $
+xtitle='Eccentricity', $
+ytitle='K [m s!u-1!n]', $
+/xsty, xran=[-buf/xnel, 1 + 2d / xnel], $
+/yst, yran=[-buf*yfac, max(karr) + buf*yfac], $
+c_colors = dindgen(numlvls)*254/numlvls, /fill, $
+POSITION=[xlow, ylow, 0.95, 0.95], $
+levels=levels2
+
+ ncolors=254.
+ loc = [xlow-0.2, ylow, xlow-0.15, 0.95]
+ bar = REPLICATE(1B, 10) # BINDGEN(256) 
+ xsize = (loc(2) - loc(0)) * !D.X_VSIZE
+ ysize = (loc(3) - loc(1)) * !D.Y_VSIZE 
+ xstart = loc(0) * !D.X_VSIZE
+ ystart = loc(1) * !D.Y_VSIZE 
+ bar = BYTSCL(bar, TOP=ncolors-1)
+ IF !D.NAME EQ 'PS' THEN $
+      TV, bar, xstart, ystart, XSIZE=xsize, YSIZE=ysize ELSE $
+      TV, CONGRID(bar, xsize, ysize), xstart, ystart
+ PLOTS, [loc(0), loc(0), loc(2), loc(2), loc(0)], $
+       [loc(1), loc(3), loc(3), loc(1), loc(1)], /NORMAL
+       
+ maxrange = max(numgrid)
+ title = ''
+ ytitle='# Realizations'
+ PLOT, [minrange, maxrange], [minrange, maxrange], /nodata, $
+ XTICKS=1, YTICKS=divisions, XSTYLE=1, YSTYLE=1, TITLE=title, $
+ POSITION=loc, COLOR=color, CHARSIZE=charsize, /NOERASE, $
+ YTICKFORMAT=format, XTICKFORMAT='(A1)', YTICKLEN=ticklen, $
+ YRANGE=[minrange, maxrange], FONT=font, YMinor=minor, _STRICT_EXTRA=extra, $
+ YTICKNAME=ticknames, YLOG=ylog, XTITLE="", YTITLE=ytitle
+endif;contour set
+
 end;kfme_bmc_plot.pro
 
 pro kfme_bmc_plt_cntr, event
@@ -9803,12 +9971,19 @@ pro kfme_bmc_crange, event
   print, 'Color range set to: ', newval
 end;kfme_bmc_crange.pro
 
+;***************** PERIOD SECTION *****************
 pro kfme_bmc_perx_set, event
   ;Retrieve the pointer to the state structure:
   widget_control, event.top, get_uvalue=pstate
   
   print, 'Plot per along X? ', event.select
   (*pstate).bootmc.bmc_perx_set = event.select
+  
+  ;now turn off the X plot for the other parameters:
+  (*pstate).bootmc.bmc_eccx_set = 0
+  (*pstate).bootmc.bmc_ksax_set = 0
+  widget_control, (*pstate).bootmc.bmc_gui.bmc_eccxbttn, set_button = 0
+  widget_control, (*pstate).bootmc.bmc_gui.bmc_ksaxbttn, set_button = 0
 end;kfme_bmc_perx_set.pro
 
 pro kfme_bmc_plot_perx, event
@@ -9827,6 +10002,12 @@ pro kfme_bmc_pery_set, event
   
   print, 'Plot per along Y? ', event.select
   (*pstate).bootmc.bmc_pery_set = event.select
+  
+  ;now turn off the Y plot for the other parameters:
+  (*pstate).bootmc.bmc_eccy_set = 0
+  (*pstate).bootmc.bmc_ksay_set = 0
+  widget_control, (*pstate).bootmc.bmc_gui.bmc_eccybttn, set_button = 0
+  widget_control, (*pstate).bootmc.bmc_gui.bmc_ksaybttn, set_button = 0
 end;kfme_bmc_pery_set.pro
 
 pro kfme_bmc_plot_pery, event
@@ -9877,12 +10058,19 @@ pro kfme_bmc_perhilim, event
   			strt(newval), ' in the uncertainty estimate.'
 end;kfme_bmc_perhilim.pro
 
+;***************** ECCENTRICITY SECTION *****************
 pro kfme_bmc_eccx_set, event
   ;Retrieve the pointer to the state structure:
   widget_control, event.top, get_uvalue=pstate
   
   print, 'Plot ecc along X? ', event.select
   (*pstate).bootmc.bmc_eccx_set = event.select
+
+  ;now turn off the X plot for the other parameters:
+  (*pstate).bootmc.bmc_perx_set = 0
+  (*pstate).bootmc.bmc_ksax_set = 0
+  widget_control, (*pstate).bootmc.bmc_gui.bmc_perxbttn, set_button = 0
+  widget_control, (*pstate).bootmc.bmc_gui.bmc_ksaxbttn, set_button = 0
 end;kfme_bmc_eccx_set.pro
 
 pro kfme_bmc_plot_eccx, event
@@ -9901,6 +10089,12 @@ pro kfme_bmc_eccy_set, event
   
   print, 'Plot ecc along Y? ', event.select
   (*pstate).bootmc.bmc_eccy_set = event.select
+
+  ;now turn off the Y plot for the other parameters:
+  (*pstate).bootmc.bmc_pery_set = 0
+  (*pstate).bootmc.bmc_ksay_set = 0
+  widget_control, (*pstate).bootmc.bmc_gui.bmc_perybttn, set_button = 0
+  widget_control, (*pstate).bootmc.bmc_gui.bmc_ksaybttn, set_button = 0
 end;kfme_bmc_eccy_set.pro
 
 pro kfme_bmc_plot_eccy, event
@@ -9951,12 +10145,19 @@ pro kfme_bmc_ecchilim, event
   			strt(newval), ' in the uncertainty estimate.'
 end;kfme_bmc_ecchilim.pro
 
+;*** K: SEMI-AMPLITUDE (KSA) SECTION ***
 pro kfme_bmc_ksax_set, event
   ;Retrieve the pointer to the state structure:
   widget_control, event.top, get_uvalue=pstate
   
   print, 'Plot ksa along X? ', event.select
   (*pstate).bootmc.bmc_ksax_set = event.select
+
+  ;now turn off the X plot for the other parameters:
+  (*pstate).bootmc.bmc_eccx_set = 0
+  (*pstate).bootmc.bmc_perx_set = 0
+  widget_control, (*pstate).bootmc.bmc_gui.bmc_eccxbttn, set_button = 0
+  widget_control, (*pstate).bootmc.bmc_gui.bmc_perxbttn, set_button = 0
 end;kfme_bmc_ksax_set.pro
 
 pro kfme_bmc_plot_ksax, event
@@ -9975,6 +10176,12 @@ pro kfme_bmc_ksay_set, event
   
   print, 'Plot ksa along Y? ', event.select
   (*pstate).bootmc.bmc_ksay_set = event.select
+
+  ;now turn off the X plot for the other parameters:
+  (*pstate).bootmc.bmc_eccy_set = 0
+  (*pstate).bootmc.bmc_pery_set = 0
+  widget_control, (*pstate).bootmc.bmc_gui.bmc_eccybttn, set_button = 0
+  widget_control, (*pstate).bootmc.bmc_gui.bmc_perybttn, set_button = 0
 end;kfme_bmc_ksay_set.pro
 
 pro kfme_bmc_plot_ksay, event
@@ -10108,8 +10315,10 @@ pro kfme
  rstar=1d
 
  functargs={m_star:(*pcf).m_star, $
+ m_star_unc:0d, $
  parallax:(*pcf).plx, $
  rstar:rstar, $
+ rstar_unc:0d, $
  extitle:'HD9826', $
  time_study:time_study, $
  n_planets:n_planets, scaling:1, time_offset:(*pcf).time_offset, $
@@ -12760,6 +12969,8 @@ bmc_newoutarr = 0
 bmc_chiarr = 0
 pbmc_newoutarr = ptr_new(bmc_newoutarr, /no_copy, /allocate)
 pbmc_chiarr = ptr_new(bmc_chiarr, /no_copy, /allocate)
+pbmc_xnewoutarr = ptr_new(bmc_newoutarr, /no_copy, /allocate)
+pbmc_xchiarr = ptr_new(bmc_chiarr, /no_copy, /allocate)
 
  ;**************************************************************
 ;FIRST COLUMN OF BOOTSTRAP MC TAB:
@@ -12778,14 +12989,14 @@ bmc_niterval = widget_text(bmcniterbase, $
 bmc_xcld = 0
 radiobase = widget_base(bmcbase1, /nonexclusive)
 bmc_xcldrlzbttn = widget_button(radiobase, value = 'EXCLUDE REALIZATIONS', $
-   event_pro = 'kfme_bmc_xcld')
+   event_pro = 'kfme_bmc_xcld_set')
  
  ;**************************************************************
 ;SECOND COLUMN OF BOOTSTRAP MC TAB:
 bmcbase2 = widget_base(planet, /col, frame =1)
 
 bmcplotbttn = widget_button(bmcbase2, value = 'PLOT', $
-   event_pro = 'kfme_bmc_plot')
+   event_pro = 'kfme_bmc_plotdata')
    
 ;set the plot type to either contour or scatter:
 bmc_contour = 0
@@ -12862,8 +13073,8 @@ bmcbase4 = widget_base(planet, /col, frame =1)
 textpar = widget_text(bmcbase4, value = 'PERIOD')
 
 bmc_plot_perx = ''
-bmc_perxbase = widget_base(bmcbase4, /row)
 bmc_perx_set = 0
+bmc_perxbase = widget_base(bmcbase4, /row)
 radiobase = widget_base(bmc_perxbase, /nonexclusive)
 bmc_perxbttn  = widget_button(radiobase, value = 'X: ', $
 	event_pro = 'kfme_bmc_perx_set')
@@ -12873,19 +13084,19 @@ bmc_perxval = widget_text(bmc_perxbase, $
  	 event_pro = 'kfme_bmc_plot_perx', xsize = '12')
 
 bmc_plot_pery = ''
-bmc_perybase = widget_base(bmcbase4, /row)
 bmc_pery_set = 0
+bmc_perybase = widget_base(bmcbase4, /row)
 radiobase = widget_base(bmc_perybase, /nonexclusive)
 bmc_perybttn  = widget_button(radiobase, value = 'Y: ', $
 	event_pro = 'kfme_bmc_pery_set')
 widget_control, bmc_perybttn, set_button = bmc_pery_set
 bmc_peryval = widget_text(bmc_perybase, $
-	 value = strt(''), /editable, $
+	 value = strt(bmc_plot_pery), /editable, $
  	 event_pro = 'kfme_bmc_plot_pery', xsize = '12')
 
 bmc_perlolim = -1
-bmc_perlobase = widget_base(bmcbase4, /row)
 bmc_perlolim_set = 0
+bmc_perlobase = widget_base(bmcbase4, /row)
 radiobase = widget_base(bmc_perlobase, /nonexclusive)
 bmc_perloconbttn  = widget_button(radiobase, value = 'LO LIM: ', $
 	event_pro = 'kfme_bmc_perlo_set')
@@ -12895,8 +13106,8 @@ bmc_perloval = widget_text(bmc_perlobase, $
  	 event_pro = 'kfme_bmc_perlolim', xsize = '12')
 
 bmc_perhilim = -1
-bmc_perhibase = widget_base(bmcbase4, /row)
 bmc_perhilim_set = 0
+bmc_perhibase = widget_base(bmcbase4, /row)
 radiobase = widget_base(bmc_perhibase, /nonexclusive)
 bmc_perhiconbttn  = widget_button(radiobase, value = 'HI LIM: ', $
 	event_pro = 'kfme_bmc_perhi_set')
@@ -12911,9 +13122,9 @@ bmcbase4 = widget_base(planet, /col, frame =1)
 
 textpar = widget_text(bmcbase4, value = 'ECCENTRICITY')
 
-bmc_plot_eccx = ''
+bmc_plot_eccx = 'b'
+bmc_eccx_set = 1
 bmc_eccxbase = widget_base(bmcbase4, /row)
-bmc_eccx_set = 0
 radiobase = widget_base(bmc_eccxbase, /nonexclusive)
 bmc_eccxbttn  = widget_button(radiobase, value = 'X: ', $
 	event_pro = 'kfme_bmc_eccx_set')
@@ -12923,19 +13134,19 @@ bmc_eccxval = widget_text(bmc_eccxbase, $
  	 event_pro = 'kfme_bmc_plot_eccx', xsize = '12')
 
 bmc_plot_eccy = ''
-bmc_eccybase = widget_base(bmcbase4, /row)
 bmc_eccy_set = 0
+bmc_eccybase = widget_base(bmcbase4, /row)
 radiobase = widget_base(bmc_eccybase, /nonexclusive)
 bmc_eccybttn  = widget_button(radiobase, value = 'Y: ', $
 	event_pro = 'kfme_bmc_eccy_set')
 widget_control, bmc_eccybttn, set_button = bmc_eccy_set
 bmc_eccyval = widget_text(bmc_eccybase, $
-	 value = strt(''), /editable, $
+	 value = strt(bmc_plot_eccy), /editable, $
  	 event_pro = 'kfme_bmc_plot_eccy', xsize = '12')
 
 bmc_ecclolim = -1
-bmc_ecclobase = widget_base(bmcbase4, /row)
 bmc_ecclolim_set = 0
+bmc_ecclobase = widget_base(bmcbase4, /row)
 radiobase = widget_base(bmc_ecclobase, /nonexclusive)
 bmc_eccloconbttn  = widget_button(radiobase, value = 'LO LIM: ', $
 	event_pro = 'kfme_bmc_ecclo_set')
@@ -12945,8 +13156,8 @@ bmc_eccloval = widget_text(bmc_ecclobase, $
  	 event_pro = 'kfme_bmc_ecclolim', xsize = '12')
 
 bmc_ecchilim = -1
-bmc_ecchibase = widget_base(bmcbase4, /row)
 bmc_ecchilim_set = 0
+bmc_ecchibase = widget_base(bmcbase4, /row)
 radiobase = widget_base(bmc_ecchibase, /nonexclusive)
 bmc_ecchiconbttn  = widget_button(radiobase, value = 'HI LIM: ', $
 	event_pro = 'kfme_bmc_ecchi_set')
@@ -12962,8 +13173,8 @@ bmcbase4 = widget_base(planet, /col, frame =1)
 textpar = widget_text(bmcbase4, value = 'K (SEMI-AMP)')
 
 bmc_plot_ksax = ''
-bmc_ksaxbase = widget_base(bmcbase4, /row)
 bmc_ksax_set = 0
+bmc_ksaxbase = widget_base(bmcbase4, /row)
 radiobase = widget_base(bmc_ksaxbase, /nonexclusive)
 bmc_ksaxbttn  = widget_button(radiobase, value = 'X: ', $
 	event_pro = 'kfme_bmc_ksax_set')
@@ -12972,20 +13183,20 @@ bmc_ksaxval = widget_text(bmc_ksaxbase, $
 	 value = strt(bmc_plot_ksax), /editable, $
  	 event_pro = 'kfme_bmc_plot_ksax', xsize = '12')
 
-bmc_plot_ksay = ''
+bmc_plot_ksay = 'b'
+bmc_ksay_set = 1
 bmc_ksaybase = widget_base(bmcbase4, /row)
-bmc_ksay_set = 0
 radiobase = widget_base(bmc_ksaybase, /nonexclusive)
 bmc_ksaybttn  = widget_button(radiobase, value = 'Y: ', $
 	event_pro = 'kfme_bmc_ksay_set')
 widget_control, bmc_ksaybttn, set_button = bmc_ksay_set
 bmc_ksayval = widget_text(bmc_ksaybase, $
-	 value = strt(''), /editable, $
+	 value = strt(bmc_plot_ksay), /editable, $
  	 event_pro = 'kfme_bmc_plot_ksay', xsize = '12')
 
 bmc_ksalolim = -1
-bmc_ksalobase = widget_base(bmcbase4, /row)
 bmc_ksalolim_set = 0
+bmc_ksalobase = widget_base(bmcbase4, /row)
 radiobase = widget_base(bmc_ksalobase, /nonexclusive)
 bmc_ksaloconbttn  = widget_button(radiobase, value = 'LO LIM: ', $
 	event_pro = 'kfme_bmc_ksalo_set')
@@ -12995,8 +13206,8 @@ bmc_ksaloval = widget_text(bmc_ksalobase, $
  	 event_pro = 'kfme_bmc_ksalolim', xsize = '12')
 
 bmc_ksahilim = -1
-bmc_ksahibase = widget_base(bmcbase4, /row)
 bmc_ksahilim_set = 0
+bmc_ksahibase = widget_base(bmcbase4, /row)
 radiobase = widget_base(bmc_ksahibase, /nonexclusive)
 bmc_ksahiconbttn  = widget_button(radiobase, value = 'HI LIM: ', $
 	event_pro = 'kfme_bmc_ksahi_set')
@@ -13268,6 +13479,7 @@ bmc_gui = {bmc_niterval:bmc_niterval, $
 			bmc_cranval:bmc_cranval, $
 			bmc_perxbttn:bmc_perxbttn, $
 			bmc_perxval:bmc_perxval, $
+			bmc_perybttn:bmc_perybttn, $
 			bmc_peryval:bmc_peryval, $
 			bmc_perloconbttn:bmc_perloconbttn, $
 			bmc_perloval:bmc_perloval, $
@@ -13275,6 +13487,7 @@ bmc_gui = {bmc_niterval:bmc_niterval, $
 			bmc_perhival:bmc_perhival, $
 			bmc_eccxbttn:bmc_eccxbttn, $
 			bmc_eccxval:bmc_eccxval, $
+			bmc_eccybttn:bmc_eccybttn, $
 			bmc_eccyval:bmc_eccyval, $
 			bmc_eccloconbttn:bmc_eccloconbttn, $
 			bmc_eccloval:bmc_eccloval, $
@@ -13282,6 +13495,7 @@ bmc_gui = {bmc_niterval:bmc_niterval, $
 			bmc_ecchival:bmc_ecchival, $
 			bmc_ksaxbttn:bmc_ksaxbttn, $
 			bmc_ksaxval:bmc_ksaxval, $
+			bmc_ksaybttn:bmc_ksaybttn, $
 			bmc_ksayval:bmc_ksayval, $
 			bmc_ksaloconbttn:bmc_ksaloconbttn, $
 			bmc_ksaloval:bmc_ksaloval, $
@@ -13291,6 +13505,7 @@ bmc_gui = {bmc_niterval:bmc_niterval, $
 ;BootstrapMC Parameters:
 bootmc = {bmc_xcld:bmc_xcld, $
 		  pbmc_chiarr:pbmc_chiarr, $
+		  pbmc_xchiarr:pbmc_xchiarr, $
 		  bmc_chisqcb:bmc_chisqcb, $
 		  bmc_contour:bmc_contour, $
 		  bmc_cran_set:bmc_cran_set, $
@@ -13298,6 +13513,7 @@ bootmc = {bmc_xcld:bmc_xcld, $
 		  bmc_ctable:bmc_ctable, $
 		  bmc_gui:bmc_gui, $
 		  pbmc_newoutarr:pbmc_newoutarr, $
+		  pbmc_xnewoutarr:pbmc_xnewoutarr, $
 		  bmc_niter:bmc_niter, $
 		  bmc_psplotbutton:bmc_psplotbutton, $
 		  bmc_scatter:bmc_scatter, $
@@ -13313,12 +13529,16 @@ bootmc = {bmc_xcld:bmc_xcld, $
 		  bmc_perlolim_set:bmc_perlolim_set, $
 		  bmc_perhilim:bmc_perhilim, $
 		  bmc_perhilim_set:bmc_perhilim_set, $
+		  bmc_plot_eccx:bmc_plot_eccx, $
+		  bmc_plot_eccy:bmc_plot_eccy, $
 		  bmc_eccx_set:bmc_eccx_set, $
 		  bmc_eccy_set:bmc_eccy_set, $
 		  bmc_ecclolim:bmc_ecclolim, $
 		  bmc_ecclolim_set:bmc_ecclolim_set, $
 		  bmc_ecchilim:bmc_ecchilim, $
 		  bmc_ecchilim_set:bmc_ecchilim_set, $
+		  bmc_plot_ksax:bmc_plot_ksax, $
+		  bmc_plot_ksay:bmc_plot_ksay, $
 		  bmc_ksax_set:bmc_ksax_set, $
 		  bmc_ksay_set:bmc_ksay_set, $
 		  bmc_ksalolim:bmc_ksalolim, $

@@ -10,7 +10,9 @@ t_dur = t_dur, $
 hd17156b = hd17156b, $
 hd195019b = hd195019b, $
 cancri55c = cancri55c, $
-printpars = printpars
+printpars = printpars, $
+r_star = r_star, $
+m_star = m_star
 
 ;PURPOSE: This procedure will calculate the transit center, 
 ;duration, and probability given the orbital parameters
@@ -44,8 +46,8 @@ if ~keyword_set(msini) then msini = 134d ;in M_earth
 if ~keyword_set(inc) then inc = 90d
 
 ;HD 164509:
-R_star = 1.06d
-M_star = 1.13d
+;R_star = 1.06d
+;M_star = 1.13d
 
 
 ;TEST CASES THAT ALL WORKED AND PRODUCED THE SAME RESULTS 

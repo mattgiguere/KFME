@@ -9803,6 +9803,80 @@ pro kfme_bmc_crange, event
   print, 'Color range set to: ', newval
 end;kfme_bmc_crange.pro
 
+pro kfme_bmc_px_set, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.top, get_uvalue=pstate
+  
+  print, 'Plot per along X? ', event.select
+  (*pstate).bootmc.bmc_px_set = event.select
+end;kfme_bmc_px_set.pro
+
+pro kfme_bmc_plot_perx, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.id, get_value=newval
+  widget_control, event.top, get_uvalue=pstate
+  
+  ;change the color bar range for bootstrap mc:
+  (*pstate).bootmc.bmc_plot_perx = strt(newval)
+  print, 'Now plotting planet ', strt(newval), ' on the X axis.'
+end;kfme_bmc_plot_perx.pro
+
+pro kfme_bmc_py_set, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.top, get_uvalue=pstate
+  
+  print, 'Plot per along Y? ', event.select
+  (*pstate).bootmc.bmc_py_set = event.select
+end;kfme_bmc_py_set.pro
+
+pro kfme_bmc_plot_pery, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.id, get_value=newval
+  widget_control, event.top, get_uvalue=pstate
+  
+  ;change the color bar range for bootstrap mc:
+  (*pstate).bootmc.bmc_plot_pery = strt(newval)
+  print, 'Now plotting planet ', strt(newval), ' on the Y axis.'
+end;kfme_bmc_plot_pery.pro
+
+pro kfme_bmc_perlo_set, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.top, get_uvalue=pstate
+  
+  print, 'Constrain Low Per? ', event.select
+  (*pstate).bootmc.bmc_perlolim_set = event.select
+end;kfme_bmc_perlo_set.pro
+
+pro kfme_bmc_perlolim, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.id, get_value=newval
+  widget_control, event.top, get_uvalue=pstate
+  
+  ;change the color bar range for bootstrap mc:
+  (*pstate).bootmc.bmc_perlolim = double(newval)
+  print, 'Now not using realizations with periods lower than ', $
+  			strt(newval), ' in the uncertainty estimate.'
+end;kfme_bmc_perlolim.pro
+
+pro kfme_bmc_perhi_set, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.top, get_uvalue=pstate
+  
+  print, 'Constrain Hi Per? ', event.select
+  (*pstate).bootmc.bmc_perhilim_set = event.select
+end;kfme_bmc_perhi_set.pro
+
+pro kfme_bmc_perhilim, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.id, get_value=newval
+  widget_control, event.top, get_uvalue=pstate
+  
+  ;change the color bar range for bootstrap mc:
+  (*pstate).bootmc.bmc_perhilim = double(newval)
+  print, 'Now not using realizations with periods greater than ', $
+  			strt(newval), ' in the uncertainty estimate.'
+end;kfme_bmc_perhilim.pro
+
 
 
 ;**************************************************************
@@ -12532,8 +12606,6 @@ planet = widget_base(planetbase9, /row)
 
  ;**************************************************************
 ;Set non-specific variables for Bootstrap MC:
-bmc_xpar = 'e'
-bmc_ypar = 'K'
 
 ;create the pointers for the chiarr and newoutarr for the 
 ;bootstrap monte carlo stuff:
@@ -12640,12 +12712,51 @@ bmc_cranval = widget_text(bmc_cranbase, $
 ;FOURTH COLUMN OF BOOTSTRAP MC TAB - PERIOD :
 bmcbase4 = widget_base(planet, /col, frame =1)
 
- textpar = widget_text(bmcbase4, value = 'PERIOD')
+textpar = widget_text(bmcbase4, value = 'PERIOD')
 
+bmc_plot_perx = ''
+bmc_pxbase = widget_base(bmcbase4, /row)
+bmc_px_set = 0
+radiobase = widget_base(bmc_pxbase, /nonexclusive)
+bmc_perxbttn  = widget_button(radiobase, value = 'X: ', $
+	event_pro = 'kfme_bmc_px_set')
+widget_control, bmc_perxbttn, set_button = bmc_px_set
+bmc_perxval = widget_text(bmc_pxbase, $
+	 value = strt(bmc_plot_perx), /editable, $
+ 	 event_pro = 'kfme_bmc_plot_perx', xsize = '12')
 
-bmc_xper = 'b'
-perxbase = widget_base(bmcbase4, /row)
-perratxtext = widget_button(perxbase, value = ' X:', xsize = 9)
+bmc_plot_pery = ''
+bmc_pybase = widget_base(bmcbase4, /row)
+bmc_py_set = 0
+radiobase = widget_base(bmc_pybase, /nonexclusive)
+bmc_perybttn  = widget_button(radiobase, value = 'Y: ', $
+	event_pro = 'kfme_bmc_py_set')
+widget_control, bmc_perybttn, set_button = bmc_py_set
+bmc_peryval = widget_text(bmc_pybase, $
+	 value = strt(''), /editable, $
+ 	 event_pro = 'kfme_bmc_plot_pery', xsize = '12')
+
+bmc_perlolim = -1
+bmc_perlobase = widget_base(bmcbase4, /row)
+bmc_perlolim_set = 0
+radiobase = widget_base(bmc_perlobase, /nonexclusive)
+bmc_perloconbttn  = widget_button(radiobase, value = 'LO LIM: ', $
+	event_pro = 'kfme_bmc_perlo_set')
+widget_control, bmc_perloconbttn, set_button = bmc_py_set
+bmc_perloval = widget_text(bmc_perlobase, $
+	 value = strt(bmc_perlolim), /editable, $
+ 	 event_pro = 'kfme_bmc_perlolim', xsize = '12')
+
+bmc_perhilim = -1
+bmc_perhibase = widget_base(bmcbase4, /row)
+bmc_perhilim_set = 0
+radiobase = widget_base(bmc_perhibase, /nonexclusive)
+bmc_perhiconbttn  = widget_button(radiobase, value = 'HI LIM: ', $
+	event_pro = 'kfme_bmc_perhi_set')
+widget_control, bmc_perhiconbttn, set_button = bmc_py_set
+bmc_perhival = widget_text(bmc_perhibase, $
+	 value = strt(bmc_perhilim), /editable, $
+ 	 event_pro = 'kfme_bmc_perhilim', xsize = '12')
 
 
 
@@ -12915,7 +13026,14 @@ bmc_gui = {bmc_niterval:bmc_niterval, $
 			bmc_cscbnbttn:bmc_cscbnbttn, $
 			bmc_ctableval:bmc_ctableval, $
 			bmc_cranbttn:bmc_cranbttn, $
-			bmc_cranval:bmc_cranval}
+			bmc_cranval:bmc_cranval, $
+			bmc_perxbttn:bmc_perxbttn, $
+			bmc_perxval:bmc_perxval, $
+			bmc_peryval:bmc_peryval, $
+			bmc_perloconbttn:bmc_perloconbttn, $
+			bmc_perloval:bmc_perloval, $
+			bmc_perhiconbttn:bmc_perhiconbttn, $
+			bmc_perhival:bmc_perhival}
 
 ;BootstrapMC Parameters:
 bootmc = {bmc_xcld:bmc_xcld, $
@@ -12934,8 +13052,14 @@ bootmc = {bmc_xcld:bmc_xcld, $
 		  bmc_xrange:bmc_xrange, $
 		  bmc_yran_set:bmc_yran_set, $
 		  bmc_yrange:bmc_yrange, $
-		  bmc_xpar:bmc_xpar, $
-		  bmc_ypar:bmc_ypar}
+		  bmc_plot_perx:bmc_plot_perx, $
+		  bmc_plot_pery:bmc_plot_pery, $
+		  bmc_px_set:bmc_px_set, $
+		  bmc_py_set:bmc_py_set, $
+		  bmc_perlolim:bmc_perlolim, $
+		  bmc_perlolim_set:bmc_perlolim_set, $
+		  bmc_perhilim:bmc_perhilim, $
+		  bmc_perhilim_set:bmc_perhilim_set}
 		  
 
  ;Widgets in the Control Bar:

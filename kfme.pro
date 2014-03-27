@@ -9877,6 +9877,80 @@ pro kfme_bmc_perhilim, event
   			strt(newval), ' in the uncertainty estimate.'
 end;kfme_bmc_perhilim.pro
 
+pro kfme_bmc_eccx_set, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.top, get_uvalue=pstate
+  
+  print, 'Plot ecc along X? ', event.select
+  (*pstate).bootmc.bmc_eccx_set = event.select
+end;kfme_bmc_eccx_set.pro
+
+pro kfme_bmc_plot_eccx, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.id, get_value=newval
+  widget_control, event.top, get_uvalue=pstate
+  
+  ;change the color bar range for bootstrap mc:
+  (*pstate).bootmc.bmc_plot_eccx = strt(newval)
+  print, 'Now plotting planet ', strt(newval), ' on the X axis.'
+end;kfme_bmc_plot_eccx.pro
+
+pro kfme_bmc_eccy_set, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.top, get_uvalue=pstate
+  
+  print, 'Plot ecc along Y? ', event.select
+  (*pstate).bootmc.bmc_eccy_set = event.select
+end;kfme_bmc_eccy_set.pro
+
+pro kfme_bmc_plot_eccy, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.id, get_value=newval
+  widget_control, event.top, get_uvalue=pstate
+  
+  ;change the color bar range for bootstrap mc:
+  (*pstate).bootmc.bmc_plot_eccy = strt(newval)
+  print, 'Now plotting planet ', strt(newval), ' on the Y axis.'
+end;kfme_bmc_plot_eccy.pro
+
+pro kfme_bmc_ecclo_set, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.top, get_uvalue=pstate
+  
+  print, 'Constrain Low ecc? ', event.select
+  (*pstate).bootmc.bmc_ecclolim_set = event.select
+end;kfme_bmc_ecclo_set.pro
+
+pro kfme_bmc_ecclolim, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.id, get_value=newval
+  widget_control, event.top, get_uvalue=pstate
+  
+  ;change the color bar range for bootstrap mc:
+  (*pstate).bootmc.bmc_ecclolim = double(newval)
+  print, 'Now not using realizations with ecciods lower than ', $
+  			strt(newval), ' in the uncertainty estimate.'
+end;kfme_bmc_ecclolim.pro
+
+pro kfme_bmc_ecchi_set, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.top, get_uvalue=pstate
+  
+  print, 'Constrain Hi ecc? ', event.select
+  (*pstate).bootmc.bmc_ecchilim_set = event.select
+end;kfme_bmc_ecchi_set.pro
+
+pro kfme_bmc_ecchilim, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.id, get_value=newval
+  widget_control, event.top, get_uvalue=pstate
+  
+  ;change the color bar range for bootstrap mc:
+  (*pstate).bootmc.bmc_ecchilim = double(newval)
+  print, 'Now not using realizations with ecciods greater than ', $
+  			strt(newval), ' in the uncertainty estimate.'
+end;kfme_bmc_ecchilim.pro
+
 
 
 ;**************************************************************
@@ -12758,6 +12832,56 @@ bmc_perhival = widget_text(bmc_perhibase, $
 	 value = strt(bmc_perhilim), /editable, $
  	 event_pro = 'kfme_bmc_perhilim', xsize = '12')
 
+ ;**************************************************************
+;FOURTH COLUMN OF BOOTSTRAP MC TAB - ECCENTRICITY :
+bmcbase4 = widget_base(planet, /col, frame =1)
+
+textpar = widget_text(bmcbase4, value = 'ECCENTRICITY')
+
+bmc_plot_eccx = ''
+bmc_eccxbase = widget_base(bmcbase4, /row)
+bmc_eccx_set = 0
+radiobase = widget_base(bmc_eccxbase, /nonexclusive)
+bmc_eccxbttn  = widget_button(radiobase, value = 'X: ', $
+	event_pro = 'kfme_bmc_eccx_set')
+widget_control, bmc_eccxbttn, set_button = bmc_eccx_set
+bmc_eccxval = widget_text(bmc_eccxbase, $
+	 value = strt(bmc_plot_eccx), /editable, $
+ 	 event_pro = 'kfme_bmc_plot_eccx', xsize = '12')
+
+bmc_plot_eccy = ''
+bmc_eccybase = widget_base(bmcbase4, /row)
+bmc_eccy_set = 0
+radiobase = widget_base(bmc_eccybase, /nonexclusive)
+bmc_eccybttn  = widget_button(radiobase, value = 'Y: ', $
+	event_pro = 'kfme_bmc_eccy_set')
+widget_control, bmc_eccybttn, set_button = bmc_eccy_set
+bmc_eccyval = widget_text(bmc_eccybase, $
+	 value = strt(''), /editable, $
+ 	 event_pro = 'kfme_bmc_plot_eccy', xsize = '12')
+
+bmc_ecclolim = -1
+bmc_ecclobase = widget_base(bmcbase4, /row)
+bmc_ecclolim_set = 0
+radiobase = widget_base(bmc_ecclobase, /nonexclusive)
+bmc_eccloconbttn  = widget_button(radiobase, value = 'LO LIM: ', $
+	event_pro = 'kfme_bmc_ecclo_set')
+widget_control, bmc_eccloconbttn, set_button = bmc_py_set
+bmc_eccloval = widget_text(bmc_ecclobase, $
+	 value = strt(bmc_ecclolim), /editable, $
+ 	 event_pro = 'kfme_bmc_ecclolim', xsize = '12')
+
+bmc_ecchilim = -1
+bmc_ecchibase = widget_base(bmcbase4, /row)
+bmc_ecchilim_set = 0
+radiobase = widget_base(bmc_ecchibase, /nonexclusive)
+bmc_ecchiconbttn  = widget_button(radiobase, value = 'HI LIM: ', $
+	event_pro = 'kfme_bmc_ecchi_set')
+widget_control, bmc_ecchiconbttn, set_button = bmc_py_set
+bmc_ecchival = widget_text(bmc_ecchibase, $
+	 value = strt(bmc_ecchilim), /editable, $
+ 	 event_pro = 'kfme_bmc_ecchilim', xsize = '12')
+
 
 
 
@@ -13033,7 +13157,14 @@ bmc_gui = {bmc_niterval:bmc_niterval, $
 			bmc_perloconbttn:bmc_perloconbttn, $
 			bmc_perloval:bmc_perloval, $
 			bmc_perhiconbttn:bmc_perhiconbttn, $
-			bmc_perhival:bmc_perhival}
+			bmc_perhival:bmc_perhival, $
+			bmc_eccxbttn:bmc_eccxbttn, $
+			bmc_eccxval:bmc_eccxval, $
+			bmc_eccyval:bmc_eccyval, $
+			bmc_eccloconbttn:bmc_eccloconbttn, $
+			bmc_eccloval:bmc_eccloval, $
+			bmc_ecchiconbttn:bmc_ecchiconbttn, $
+			bmc_ecchival:bmc_ecchival}
 
 ;BootstrapMC Parameters:
 bootmc = {bmc_xcld:bmc_xcld, $
@@ -13059,7 +13190,13 @@ bootmc = {bmc_xcld:bmc_xcld, $
 		  bmc_perlolim:bmc_perlolim, $
 		  bmc_perlolim_set:bmc_perlolim_set, $
 		  bmc_perhilim:bmc_perhilim, $
-		  bmc_perhilim_set:bmc_perhilim_set}
+		  bmc_perhilim_set:bmc_perhilim_set, $
+		  bmc_eccx_set:bmc_eccx_set, $
+		  bmc_eccy_set:bmc_eccy_set, $
+		  bmc_ecclolim:bmc_ecclolim, $
+		  bmc_ecclolim_set:bmc_ecclolim_set, $
+		  bmc_ecchilim:bmc_ecchilim, $
+		  bmc_ecchilim_set:bmc_ecchilim_set}
 		  
 
  ;Widgets in the Control Bar:

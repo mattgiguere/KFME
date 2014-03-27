@@ -9951,6 +9951,79 @@ pro kfme_bmc_ecchilim, event
   			strt(newval), ' in the uncertainty estimate.'
 end;kfme_bmc_ecchilim.pro
 
+pro kfme_bmc_ksax_set, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.top, get_uvalue=pstate
+  
+  print, 'Plot ksa along X? ', event.select
+  (*pstate).bootmc.bmc_ksax_set = event.select
+end;kfme_bmc_ksax_set.pro
+
+pro kfme_bmc_plot_ksax, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.id, get_value=newval
+  widget_control, event.top, get_uvalue=pstate
+  
+  ;change the color bar range for bootstrap mc:
+  (*pstate).bootmc.bmc_plot_ksax = strt(newval)
+  print, 'Now plotting planet ', strt(newval), ' on the X axis.'
+end;kfme_bmc_plot_ksax.pro
+
+pro kfme_bmc_ksay_set, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.top, get_uvalue=pstate
+  
+  print, 'Plot ksa along Y? ', event.select
+  (*pstate).bootmc.bmc_ksay_set = event.select
+end;kfme_bmc_ksay_set.pro
+
+pro kfme_bmc_plot_ksay, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.id, get_value=newval
+  widget_control, event.top, get_uvalue=pstate
+  
+  ;change the color bar range for bootstrap mc:
+  (*pstate).bootmc.bmc_plot_ksay = strt(newval)
+  print, 'Now plotting planet ', strt(newval), ' on the Y axis.'
+end;kfme_bmc_plot_ksay.pro
+
+pro kfme_bmc_ksalo_set, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.top, get_uvalue=pstate
+  
+  print, 'Constrain Low ksa? ', event.select
+  (*pstate).bootmc.bmc_ksalolim_set = event.select
+end;kfme_bmc_ksalo_set.pro
+
+pro kfme_bmc_ksalolim, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.id, get_value=newval
+  widget_control, event.top, get_uvalue=pstate
+  
+  ;change the color bar range for bootstrap mc:
+  (*pstate).bootmc.bmc_ksalolim = double(newval)
+  print, 'Now not using realizations with ksaiods lower than ', $
+  			strt(newval), ' in the uncertainty estimate.'
+end;kfme_bmc_ksalolim.pro
+
+pro kfme_bmc_ksahi_set, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.top, get_uvalue=pstate
+  
+  print, 'Constrain Hi ksa? ', event.select
+  (*pstate).bootmc.bmc_ksahilim_set = event.select
+end;kfme_bmc_ksahi_set.pro
+
+pro kfme_bmc_ksahilim, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.id, get_value=newval
+  widget_control, event.top, get_uvalue=pstate
+  
+  ;change the color bar range for bootstrap mc:
+  (*pstate).bootmc.bmc_ksahilim = double(newval)
+  print, 'Now not using realizations with ksaiods greater than ', $
+  			strt(newval), ' in the uncertainty estimate.'
+end;kfme_bmc_ksahilim.pro
 
 
 ;**************************************************************
@@ -12832,8 +12905,8 @@ bmc_perhival = widget_text(bmc_perhibase, $
 	 value = strt(bmc_perhilim), /editable, $
  	 event_pro = 'kfme_bmc_perhilim', xsize = '12')
 
- ;**************************************************************
-;FOURTH COLUMN OF BOOTSTRAP MC TAB - ECCENTRICITY :
+;**************************************************************
+;FIFTH COLUMN OF BOOTSTRAP MC TAB - ECCENTRICITY :
 bmcbase4 = widget_base(planet, /col, frame =1)
 
 textpar = widget_text(bmcbase4, value = 'ECCENTRICITY')
@@ -12882,13 +12955,55 @@ bmc_ecchival = widget_text(bmc_ecchibase, $
 	 value = strt(bmc_ecchilim), /editable, $
  	 event_pro = 'kfme_bmc_ecchilim', xsize = '12')
 
+;**************************************************************
+;SIXTH COLUMN OF BOOTSTRAP MC TAB - SEMI-AMP :
+bmcbase4 = widget_base(planet, /col, frame =1)
 
+textpar = widget_text(bmcbase4, value = 'K (SEMI-AMP)')
 
+bmc_plot_ksax = ''
+bmc_ksaxbase = widget_base(bmcbase4, /row)
+bmc_ksax_set = 0
+radiobase = widget_base(bmc_ksaxbase, /nonexclusive)
+bmc_ksaxbttn  = widget_button(radiobase, value = 'X: ', $
+	event_pro = 'kfme_bmc_ksax_set')
+widget_control, bmc_ksaxbttn, set_button = bmc_ksax_set
+bmc_ksaxval = widget_text(bmc_ksaxbase, $
+	 value = strt(bmc_plot_ksax), /editable, $
+ 	 event_pro = 'kfme_bmc_plot_ksax', xsize = '12')
 
+bmc_plot_ksay = ''
+bmc_ksaybase = widget_base(bmcbase4, /row)
+bmc_ksay_set = 0
+radiobase = widget_base(bmc_ksaybase, /nonexclusive)
+bmc_ksaybttn  = widget_button(radiobase, value = 'Y: ', $
+	event_pro = 'kfme_bmc_ksay_set')
+widget_control, bmc_ksaybttn, set_button = bmc_ksay_set
+bmc_ksayval = widget_text(bmc_ksaybase, $
+	 value = strt(''), /editable, $
+ 	 event_pro = 'kfme_bmc_plot_ksay', xsize = '12')
 
- ;***************TABSTUFF************************************
+bmc_ksalolim = -1
+bmc_ksalobase = widget_base(bmcbase4, /row)
+bmc_ksalolim_set = 0
+radiobase = widget_base(bmc_ksalobase, /nonexclusive)
+bmc_ksaloconbttn  = widget_button(radiobase, value = 'LO LIM: ', $
+	event_pro = 'kfme_bmc_ksalo_set')
+widget_control, bmc_ksaloconbttn, set_button = bmc_py_set
+bmc_ksaloval = widget_text(bmc_ksalobase, $
+	 value = strt(bmc_ksalolim), /editable, $
+ 	 event_pro = 'kfme_bmc_ksalolim', xsize = '12')
 
-
+bmc_ksahilim = -1
+bmc_ksahibase = widget_base(bmcbase4, /row)
+bmc_ksahilim_set = 0
+radiobase = widget_base(bmc_ksahibase, /nonexclusive)
+bmc_ksahiconbttn  = widget_button(radiobase, value = 'HI LIM: ', $
+	event_pro = 'kfme_bmc_ksahi_set')
+widget_control, bmc_ksahiconbttn, set_button = bmc_py_set
+bmc_ksahival = widget_text(bmc_ksahibase, $
+	 value = strt(bmc_ksahilim), /editable, $
+ 	 event_pro = 'kfme_bmc_ksahilim', xsize = '12')
 
 ;**********************************************************************
 ;**********************************************************************
@@ -13164,7 +13279,14 @@ bmc_gui = {bmc_niterval:bmc_niterval, $
 			bmc_eccloconbttn:bmc_eccloconbttn, $
 			bmc_eccloval:bmc_eccloval, $
 			bmc_ecchiconbttn:bmc_ecchiconbttn, $
-			bmc_ecchival:bmc_ecchival}
+			bmc_ecchival:bmc_ecchival, $
+			bmc_ksaxbttn:bmc_ksaxbttn, $
+			bmc_ksaxval:bmc_ksaxval, $
+			bmc_ksayval:bmc_ksayval, $
+			bmc_ksaloconbttn:bmc_ksaloconbttn, $
+			bmc_ksaloval:bmc_ksaloval, $
+			bmc_ksahiconbttn:bmc_ksahiconbttn, $
+			bmc_ksahival:bmc_ksahival}
 
 ;BootstrapMC Parameters:
 bootmc = {bmc_xcld:bmc_xcld, $
@@ -13196,7 +13318,13 @@ bootmc = {bmc_xcld:bmc_xcld, $
 		  bmc_ecclolim:bmc_ecclolim, $
 		  bmc_ecclolim_set:bmc_ecclolim_set, $
 		  bmc_ecchilim:bmc_ecchilim, $
-		  bmc_ecchilim_set:bmc_ecchilim_set}
+		  bmc_ecchilim_set:bmc_ecchilim_set, $
+		  bmc_ksax_set:bmc_ksax_set, $
+		  bmc_ksay_set:bmc_ksay_set, $
+		  bmc_ksalolim:bmc_ksalolim, $
+		  bmc_ksalolim_set:bmc_ksalolim_set, $
+		  bmc_ksahilim:bmc_ksahilim, $
+		  bmc_ksahilim_set:bmc_ksahilim_set}
 		  
 
  ;Widgets in the Control Bar:

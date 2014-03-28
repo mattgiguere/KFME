@@ -9650,6 +9650,7 @@ pro kfme_bmc_plot, pstate
 ;restore the bootmc results
 newoutarr = (*(*pstate).bootmc.pbmc_xnewoutarr)
 chiarr = (*(*pstate).bootmc.pbmc_xchiarr)  
+noasz = size(newoutarr)
 
 ;**********************************************************************
 ;                     DETERMINE WHAT TO PLOT
@@ -9748,7 +9749,6 @@ endif
 ;**********************************************************************
 ;                     BEGIN SCATTER SECTION
 ;**********************************************************************
-stop
 if (*pstate).bootmc.bmc_scatter then begin
   plot, xarr, yarr, ps=8, xtitle=xtitle, $
   ytitle=ytitle
@@ -9759,12 +9759,6 @@ endif;scatter set
 ;**********************************************************************
 if (*pstate).bootmc.bmc_contour then begin
 
-
-noasz = size(newoutarr)
-for i=0, noasz[2] - 1 do oplot, [eccarr[i], eccarr[i]], $
-[karr[i],karr[i]], color=round(chiarr[i]*100d), ps=8
-
-wait, 3
 xnel = 5d1
 ynelmax = 5d1
 buf = 2d
@@ -9800,6 +9794,8 @@ ytitle='K [m s!u-1!n]', $
 c_colors = dindgen(numlvls)*254/numlvls, /fill, $
 POSITION=[0.3, 0.1, 0.95, 0.95], $
 levels=levels
+
+stop
 
  ncolors=254.
  loc = [0.1, 0.10, 0.15, 0.95]
@@ -10367,7 +10363,7 @@ pro kfme
 ;endif
  
  ;make the top level base and add resize events:
- tlb = widget_base(title = 'Interactive KFME v. 2014/03/24 ', $
+ tlb = widget_base(title = 'Interactive KFME v. 2014/03/28 ', $
  /col, xoff = x_offset, yoff = y_offset, /tlb_size_events)
  
  ;Create the top row to house the plot & buttons:

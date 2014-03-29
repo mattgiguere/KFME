@@ -9738,6 +9738,15 @@ if (*pstate).bootmc.bmc_ksay_set then begin
   ytitle = 'K '+strt((*pstate).bootmc.bmc_plot_ksay)+' [m s!u-1!n]'
 endif
 
+;**********************************************************************
+;                   MODIFY X & Y RANGES IF SET
+;**********************************************************************
+if (*pstate).bootmc.bmc_xran_set then begin
+   xrange = (*pstate).bootmc.bmc_xrange
+endif
+if (*pstate).bootmc.bmc_yran_set then begin
+   yrange = (*pstate).bootmc.bmc_yrange
+endif
 
 ;**********************************************************************
 ;                     BEGIN COLORBAR SECTION
@@ -9751,7 +9760,7 @@ endif
 ;**********************************************************************
 if (*pstate).bootmc.bmc_scatter then begin
   plot, xarr, yarr, ps=8, xtitle=xtitle, $
-  ytitle=ytitle
+  ytitle=ytitle, xrange=xrange, yrange=yrange
 endif;scatter set
 
 ;**********************************************************************
@@ -10363,7 +10372,7 @@ pro kfme
 ;endif
  
  ;make the top level base and add resize events:
- tlb = widget_base(title = 'Interactive KFME v. 2014/03/28 ', $
+ tlb = widget_base(title = 'Interactive KFME v. 2014/03/29 ', $
  /col, xoff = x_offset, yoff = y_offset, /tlb_size_events)
  
  ;Create the top row to house the plot & buttons:

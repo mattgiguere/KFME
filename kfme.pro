@@ -2920,8 +2920,6 @@ fixed[6] = pararr[5*n_planets+1].fixed;dvdt
 
 (*pstate).ndof = n_planets*5 + 2 - total(fixed)
 
-new = 0
-if new eq 0 then begin
 ;old way of calling things:
 orbel=rv_fit_mp(fitobs,fitdat, err, $
 	fixed=fixed, $
@@ -2933,24 +2931,7 @@ orbel=rv_fit_mp(fitobs,fitdat, err, $
 	orbel=orbel, $
 	quiet=quiet, $
 	nplanets=n_planets)
-endif else begin
-;new way of calling things:
-  parmp = mpfit('rvlin', $
-			   functargs = functargs, $
-			   parinfo = parinfo, $
-			   errmsg = errmsg, $
-			   perror = perror, $
-			   covar = covar, $
-			   status = status, $
-			   bestnorm = bestnorm, $
-			   niter = niter, $
-			   ftol = 1d-15, $
-			   xtol = 1d-15, $
-			   autoderivative = 0, $
-			   quiet = quiet)
-	
-endelse
-;stop
+
 pararr[5*indx].value = orbel[7*indx] ;p
 pararr[5*indx+4].value = orbel[7*indx+1] ;tp
 pararr[5*indx+2].value = orbel[7*indx+2] ;ecc
@@ -3045,6 +3026,237 @@ print, 'rms is: ', rms
   kfme_update_fields, pstate
   
 end ;kfme_rvlin.pro
+
+pro kfme_rvlin2, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.top, get_uvalue=pstate
+  widget_control, event.id, get_value=oldway
+  
+pararr = kfme_create_par(pstate)
+opararr = pararr
+
+;TAKE CARE OF THE DEWARS:
+;DEWAR 24:
+;IF THERE WASN'T A DEWAR 24 (I.E., KECK)
+;THEN DON'T TREAT IT AS A FREE PARAMETER:
+npararr = n_elements(pararr)
+;if ((*(*(*pstate).pfunctargs).dew24) le 0) then begin
+;pararr[npararr-2].fixed = 1
+;endif;dew24
+;
+;THE SAME GOES FOR DEW 39:
+;if ((*(*(*pstate).pfunctargs).dew39) lt 0) then begin
+;pararr[npararr-1].fixed = 1
+;endif;dew39
+
+print, 'The parameters before running...'
+print, '---------------------------------------'
+for q=0, n_elements(pararr.value)-1 do begin
+ print, 'Name of '+strt(q)+':       ', pararr[q].parname
+ print, 'Value:      ', strt(pararr[q].value)
+ print, 'Fixed:      ', strt(pararr[q].fixed)
+ print, 'Lo Limited: ', strt(pararr[q].limited[0])
+ print, 'Lo Limit:   ', strt(pararr[q].limits[0])
+ print, 'Hi Limited: ', strt(pararr[q].limited[1])
+ print, 'Hi Limit:   ', strt(pararr[q].limits[1])
+ print, 'Step:       ', strt(pararr[q].step)
+ print, '- - - - - - - - - - - - - - - - - - - - '
+ if ( (pararr[q].value le pararr[q].limits[0]) OR $
+     (pararr[q].value ge pararr[q].limits[1]) ) then begin
+     print, 'CHECK YOUR PARAMETERS AND LIMITS!!'
+     print, 'AUTOFIXING THEM BEFORE RUN.........'
+	  if (pararr[q].value le pararr[q].limits[0]) then begin
+	  pararr[q].value +=(pararr[q].limits[0]-pararr[q].value)+.1
+	  endif else pararr[q].value -= $
+			(pararr[q].value-pararr[q].limits[1])+.1
+	  print, pararr[q].parname, ' is now: ', pararr[q].value
+ endif
+ 
+ if ((pararr[q].parname eq 'Offset RV (m/s)') and $
+    pararr[q].fixed and (pararr[q].value eq 0d)) then begin
+    print, 'WARNING! THIS WILL FAIL!'
+    print, 'You cannot have the offset set to zero and '
+    print, 'fixed at the same time due to an issue with RVLIN. '
+    print, 'Set the offset to 0.0001 if you would like to fix it '
+    print, 'to zero'
+    print, 'Type ".c" to continue.'
+    stop
+ endif   
+ 
+ endfor
+print, '---------------------------------------'
+
+
+  astx = (*(*pstate).pcf).cf_ast.astx
+  errx = (*(*pstate).pcf).cf_ast.errx
+  asty = (*(*pstate).pcf).cf_ast.asty
+  erry = (*(*pstate).pcf).cf_ast.erry
+
+	;JUST RV
+	fitobs = (*(*pstate).pcf).cf_rv.jd
+	fitdat = (*(*pstate).pcf).cf_rv.mnvel
+	err = (*(*pstate).pcf).cf_rv.errvel
+	
+;   pararr.value = MPFITFUN('rvlin',fitobs, fitdat, $
+;    err, parinfo=pararr, covar=covar, perror=perror, $
+;	 yfit=syn_fit, dof=dof, $
+;	 functargs=(*(*pstate).pfunctargs), maxiter = 1000., $
+;	 XTOL = 1d-12, errmsg = errmsg)
+	 
+	 orbpar=pararr.value
+
+m_star = (*(*pstate).pfunctargs).m_star
+
+n_planets = (*(*pstate).pfunctargs).n_planets
+
+indx=findgen(n_planets)
+
+period=orbpar[indx*5]
+a_pl=((period/365.2564d)^2*m_star)^(1./3.)
+m_pl_earth = orbpar[indx*5+1]
+inc = 89.9d
+ecc = orbpar[indx*5+2]
+
+k = mpf_K(a_pl, m_pl_earth, period, m_star, inc, ecc)
+
+orbel=dblarr(n_planets*7)
+orbel[7*indx] = orbpar[indx*5] ;p
+orbel[7*indx+1] = orbpar[5*indx+4] ;tp
+orbel[7*indx+2] = orbpar[5*indx+2] ;e
+orbel[7*indx+3] = orbpar[5*indx+3] ;om
+orbel[7*indx+4] = k ;k
+orbel[5] = orbpar[5*n_planets];gam
+orbel[6] = orbpar[5*n_planets+1];dvdt
+
+fixed=dblarr(n_planets*7)
+fixed[7*indx] = pararr[5*indx].fixed
+fixed[7*indx+1] = pararr[5*indx+4].fixed
+fixed[7*indx+2] = pararr[5*indx+2].fixed
+fixed[7*indx+3] = pararr[5*indx+3].fixed
+fixed[7*indx+4] =  pararr[5*indx+1].fixed
+fixed[5] = pararr[5*n_planets].fixed;gam
+fixed[6] = pararr[5*n_planets+1].fixed;dvdt
+
+
+
+;number of degrees of freedom = 5 free orbital
+;parameters + offset and slope - 
+;number of fixed parameters 
+;as in the equation:
+;http://en.wikipedia.org/wiki/Goodness_of_fit
+
+(*pstate).ndof = n_planets*5 + 2 - total(fixed)
+
+;new way of calling things:
+parmp = mpfit('rvlin', $
+			 functargs = functargs, $
+			 parinfo = parinfo, $
+			 errmsg = errmsg, $
+			 perror = perror, $
+			 covar = covar, $
+			 status = status, $
+			 bestnorm = bestnorm, $
+			 niter = niter, $
+			 ftol = 1d-15, $
+			 xtol = 1d-15, $
+			 autoderivative = 0, $
+			 quiet = quiet)
+ 
+
+pararr[5*indx].value = orbel[7*indx] ;p
+pararr[5*indx+4].value = orbel[7*indx+1] ;tp
+pararr[5*indx+2].value = orbel[7*indx+2] ;ecc
+pararr[5*indx+3].value = orbel[7*indx+3] ;om
+k = orbel[7*indx+4]
+pararr[5*n_planets].value = orbel[5] ;gam
+pararr[5*n_planets+1].value = orbel[6] ;dvdt
+
+period = pararr[5*indx].value
+ecc = pararr[5*indx+2].value
+a_pl=((period/365.2564d)^2*m_star)^(1./3.)
+
+mnum = period * m_star * sqrt(1d - ecc^2) * K
+mden = a_pl * 2d * !dpi * sin(inc*!dtor)
+m_pl_earth = mnum/mden * 19200./100000.
+pararr[5*indx+1].value = m_pl_earth
+
+  ;perror only returns the error for p, 
+  perrorl = dblarr(n_elements(pararr.value))
+
+if ~pararr[0].fixed then begin
+  perrorl[5*indx] = perror[3*indx]
+  perrorl[5*indx+2] = perror[3*indx+2]
+  perrorl[5*indx+4] = perror[3*indx+1]
+  
+endif
+  perror=perrorl
+
+;DEGREES OF FREEDOM, NU = N - n - 1 WHERE:
+;N IS THE NUMBER OF OBSERVATIONS
+;n IS THE NUMBER OF FITTED PARAMETERS
+
+
+ chi_sq=total(((fitdat-syn_fit)/err)^2)/(n_elements(fitobs) - $
+   (*pstate).ndof)
+
+ ;rms = stddev(fitdat-syn_fit)  
+ nfree = (*pstate).ndof
+ rms = sqrt(total((fitdat - syn_fit)^2)/(n_elements(fitobs)-nfree))
+
+
+ 
+ n_planets = (*(*pstate).pfunctargs).n_planets
+ 
+print, ' '
+print, '-----------------------------------'
+print, 'FINAL ORBITAL PARAMETERS'
+print, '-----------------------------------'
+for pl=0,n_planets-1 do begin
+print, 'Period (days)              =', pararr[5*pl+0].value, $
+		'+/- ', strt(perror[5*pl+0])
+print, 'Period (years)             =', pararr[5*pl+0].value/365.2564d, $
+		'+/- ', strt(perror[5*pl+0]/365.2564d)
+print, 'Mass (Earth masses)        =', pararr[5*pl+1].value, $
+		'+/- ', strt(perror[5*pl+1])
+print, 'Eccentricity               =', pararr[5*pl+2].value, $
+		'+/- ', strt(perror[5*pl+2])
+print, 'omega (degrees)            =', pararr[5*pl+3].value, $
+		'+/- ', strt(perror[5*pl+3])
+print, 'Time of peri rv (days)     =', pararr[5*pl+4].value, $
+		'+/- ', strt(perror[5*pl+4])
+print, ' '
+endfor
+print, ' '
+print, 'Offset on rv (m/s)             =',pararr[5*n_planets].value, $
+		'+/- ', strt(perror[5*n_planets])
+print, 'Slope on rv (m/s /year)        =',pararr[5*n_planets+1].value*365.25, $
+		'+/- ', strt(perror[5*n_planets+1])*365.25
+print, 'Curve on rv (m/s /year^2)      =',pararr[5*n_planets+2].value, $
+		'+/- ', strt(perror[5*n_planets+2])
+print, 'Dewar 24 Offset (m/s)             =', $
+		 pararr[5*n_planets+3].value, $
+		'+/- ', strt(perror[5*n_planets+3])
+print, 'Dewar 39 Offset (m/s)             =', $
+		 pararr[5*n_planets+4].value, $
+		'+/- ', strt(perror[5*n_planets+4])
+	  
+print, ' '
+print, 'chi square: ', chi_sq
+print, 'number of degrees of freedom: ', (*pstate).ndof
+print, 'rms is: ', rms
+
+
+
+ ;Now to put the pararr back into the state variable and store 
+ ;the uncertainties:
+ kfme_retrieve_par, pstate, pararr, perror
+
+ print, 'COMPLETED MPFITFUN AND SENT TO kfme_DOFIT'
+;stop
+  ;Update the text fields with the new parameters:
+  kfme_update_fields, pstate
+  
+end ;kfme_rvlin2.pro
 
 pro kfme_monte, event
 
@@ -10372,7 +10584,7 @@ pro kfme
 ;endif
  
  ;make the top level base and add resize events:
- tlb = widget_base(title = 'Interactive KFME v. 2014/03/29 ', $
+ tlb = widget_base(title = 'Interactive KFME v. 2014/03/30 ', $
  /col, xoff = x_offset, yoff = y_offset, /tlb_size_events)
  
  ;Create the top row to house the plot & buttons:
@@ -10607,12 +10819,12 @@ pro kfme
    event_pro = 'kfme_cyclerun', XSIZE=halfcol)
  
  run2row = widget_base(controlbase, /row)
- runbuttn = widget_button(run2row, value = 'RVLIN', $
+ runbuttn = widget_button(run2row, value = 'RVLIN OLD', $
    event_pro = 'kfme_rvlin', XSIZE=thirdcol)
 ; montebuttn = widget_button(run2row, value = 'MONTE', $
 ;   event_pro = 'kfme_monte', XSIZE=thirdcol)
- monte2buttn = widget_button(run2row, value = 'BOOTSTRAP MC', $
-   event_pro = 'kfme_monte2', XSIZE=halfcol)
+ monte2buttn = widget_button(run2row, value = 'RVLIN NEW', $
+   event_pro = 'kfme_rvlin2', XSIZE=halfcol)
  
  residrow = widget_base(controlbase, /row)
  savresid = widget_button(residrow, value = 'SAVE RESID', $

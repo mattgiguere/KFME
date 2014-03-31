@@ -3147,6 +3147,9 @@ fixed[6] = pararr[5*n_planets+1].fixed;dvdt
 
 (*pstate).ndof = n_planets*5 + 2 - total(fixed)
 
+  functargs = {time:timenorm,  velocity:vt, error:double(e), $
+  				trend:~fixed[6], telvec:telvec, epoch:time_base}
+
 ;new way of calling things:
 parmp = mpfit('rvlin', $
 			 functargs = functargs, $

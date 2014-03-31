@@ -187,7 +187,16 @@ function rvlingrad, t, pars, beta, F, vW, WFT, epsilon, requested, epoch = epoch
 end
 
 
-function rvlin, pars, dp, time = time, velocity = vel, error = err, pars = parset, trend = trend, yfit = model, telvec = telvec, offset = offset, epoch = epoch
+function rvlin, pars, dp, $
+	time = time, $
+	velocity = vel, $
+	error = err, $
+	pars = parset, $
+	trend = trend, $
+	yfit = model, $
+	telvec = telvec, $
+	offset = offset, $
+	epoch = epoch
 
   ; model:
   ; u = h*Cos nu + c*Sin nu + v0 + d*(t-t0)

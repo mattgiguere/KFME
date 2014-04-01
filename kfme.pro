@@ -124,62 +124,62 @@ function kfme_create_rvlin_par, pstate
  pararr=replicate({parname:'', value:0.d, fixed:0, $
 					 limited:[0,0], limits:[0.d, 0.d], $
 					 step:0., error:0.d},n_parameters)
- 
+
+; pararr[5*indx].value = orbel[7*indx] ;p
+;pararr[5*indx+4].value = orbel[7*indx+1] ;tp
+;pararr[5*indx+2].value = orbel[7*indx+2] ;ecc
+;pararr[5*indx+3].value = orbel[7*indx+3] ;om
+;k = orbel[7*indx+4]
+;pararr[5*n_planets].value = orbel[5] ;gam
+;pararr[5*n_planets+1].value = orbel[6] ;dvdt
+;******************************************************
+;structure (see end of kfme_rvlin subroutine for verification):
+;pars.par1[0] = P
+;pars.par1[4] = Tp
+;pars.par1[2] = ecc
+;pars.par1[3] = om
+
  q = 0
  if (*pstate).fitplarr[0] then begin
-  pararr[q] = (*pstate).pars.par1[0] & q++
-  pararr[q] = (*pstate).pars.par1[1] & q++
-  pararr[q] = (*pstate).pars.par1[2] & q++
-  pararr[q] = (*pstate).pars.par1[3] & q++
-  pararr[q] = (*pstate).pars.par1[4] & q++
+  pararr[q] = (*pstate).pars.par1[0] & q++ ;P
+  pararr[q] = (*pstate).pars.par1[4] & q++ ;Tp
+  pararr[q] = (*pstate).pars.par1[2] & q++ ;ecc
  endif;FITPLANET1 CHECKED
  
  if (*pstate).fitplarr[1] then begin
   pararr[q] = (*pstate).pars.par2[0] & q++
-  pararr[q] = (*pstate).pars.par2[1] & q++
-  pararr[q] = (*pstate).pars.par2[2] & q++
-  pararr[q] = (*pstate).pars.par2[3] & q++
   pararr[q] = (*pstate).pars.par2[4] & q++
+  pararr[q] = (*pstate).pars.par2[2] & q++
  endif;FITPLANET2 CHECKED
  
  if (*pstate).fitplarr[2] then begin
   pararr[q] = (*pstate).pars.par3[0] & q++
-  pararr[q] = (*pstate).pars.par3[1] & q++
-  pararr[q] = (*pstate).pars.par3[2] & q++
-  pararr[q] = (*pstate).pars.par3[3] & q++
   pararr[q] = (*pstate).pars.par3[4] & q++
+  pararr[q] = (*pstate).pars.par3[2] & q++
  endif;FITPLANET3 CHECKED
  
  if (*pstate).fitplarr[3] then begin
   pararr[q] = (*pstate).pars.par4[0] & q++
-  pararr[q] = (*pstate).pars.par4[1] & q++
-  pararr[q] = (*pstate).pars.par4[2] & q++
-  pararr[q] = (*pstate).pars.par4[3] & q++
   pararr[q] = (*pstate).pars.par4[4] & q++
+  pararr[q] = (*pstate).pars.par4[2] & q++
  endif;FITPLANET4 CHECKED
  
  if (*pstate).fitplarr[4] then begin
   pararr[q] = (*pstate).pars.par5[0] & q++
-  pararr[q] = (*pstate).pars.par5[1] & q++
-  pararr[q] = (*pstate).pars.par5[2] & q++
-  pararr[q] = (*pstate).pars.par5[3] & q++
   pararr[q] = (*pstate).pars.par5[4] & q++
+  pararr[q] = (*pstate).pars.par5[2] & q++
  endif;FITPLANET5 CHECKED
  
  if (*pstate).fitplarr[5] then begin
   pararr[q] = (*pstate).pars.par6[0] & q++
-  pararr[q] = (*pstate).pars.par6[1] & q++
-  pararr[q] = (*pstate).pars.par6[2] & q++
-  pararr[q] = (*pstate).pars.par6[3] & q++
   pararr[q] = (*pstate).pars.par6[4] & q++
+  pararr[q] = (*pstate).pars.par6[2] & q++
  endif;FITPLANET6 CHECKED
  
  if (*pstate).fitplarr[6] then begin
   pararr[q] = (*pstate).pars.par7[0] & q++
-  pararr[q] = (*pstate).pars.par7[1] & q++
-  pararr[q] = (*pstate).pars.par7[2] & q++
-  pararr[q] = (*pstate).pars.par7[3] & q++
   pararr[q] = (*pstate).pars.par7[4] & q++
+  pararr[q] = (*pstate).pars.par7[2] & q++
  endif;FITPLANET7 CHECKED
  
  ;Now for the trends and offsets

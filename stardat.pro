@@ -64,6 +64,7 @@ vsini=0d
 trend=0
 dvdt=0
 mstar=0
+mstar_unc = 0
 
 star = STRUPCASE(star)
 print, 'star is: ', star

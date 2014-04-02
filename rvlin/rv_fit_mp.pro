@@ -110,16 +110,25 @@ time_base = time_base, quiet = quiet
   if n_elements(tpmin) eq 0 then tpmin = min(t)-orbel[iper]
   if n_elements(eccmax) eq 0 then eccmax = replicate(0.99, np)
   if n_elements(eccmin) eq 0 then eccmin = replicate(0., np)
-;stop
+
   for i = 0, np-1 do begin
+  	;set the limits for all 3 parameters for all planets:
     parinfo[piecc[i]].limits = [eccmin[i], eccmax[i]]   ;set limits
     parinfo[pitp[i]].limits = [tpmin[i], tpmax[i]]
     parinfo[piper[i]].limits = [permin[i], permax[i]]
-    parinfo[piecc[i]].value = parinfo[piecc[i]].limits[0] > parinfo[piecc[i]].value < parinfo[piecc[i]].limits[1]  ;put guesses within limits
-    parinfo[piper[i]].value = parinfo[piper[i]].limits[0] > parinfo[piper[i]].value < parinfo[piper[i]].limits[1]
-    parinfo[pitp[i]].value = parinfo[pitp[i]].limits[0] > parinfo[pitp[i]].value < parinfo[pitp[i]].limits[1]
+
+	;now set the values:
+    parinfo[piecc[i]].value = parinfo[piecc[i]].limits[0] > $
+			parinfo[piecc[i]].value < $
+			parinfo[piecc[i]].limits[1]  ;put guesses within limits
+    parinfo[piper[i]].value = parinfo[piper[i]].limits[0] > $
+			parinfo[piper[i]].value < $
+			parinfo[piper[i]].limits[1]
+    parinfo[pitp[i]].value = parinfo[pitp[i]].limits[0] > $
+			parinfo[pitp[i]].value < $
+			parinfo[pitp[i]].limits[1]
   endfor
-;stop
+
   enfa0 = (parinfo[piecc].value eq 0 and ~parinfo[piecc].fixed)     ;where it's allowed to float...
   parinfo[piecc].value = parinfo[piecc].value*(~enfa0)+0.01*(enfa0) ;lift e off of 0 to start
   

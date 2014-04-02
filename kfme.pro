@@ -143,43 +143,65 @@ function kfme_create_rvlin_par, pstate
  if (*pstate).fitplarr[0] then begin
   pararr[q] = (*pstate).pars.par1[0] & q++ ;P
   pararr[q] = (*pstate).pars.par1[4] & q++ ;Tp
-  pararr[q] = (*pstate).pars.par1[2] & q++ ;ecc
+  pararr[q] = (*pstate).pars.par1[2] ;ecc
+  ;RVLIN uses 1000X the eccentricity:
+  pararr[q].value *= 1d3
+  pararr[q].limits *= 1d3
+  q++ 
  endif;FITPLANET1 CHECKED
  
  if (*pstate).fitplarr[1] then begin
   pararr[q] = (*pstate).pars.par2[0] & q++
   pararr[q] = (*pstate).pars.par2[4] & q++
-  pararr[q] = (*pstate).pars.par2[2] & q++
+  pararr[q] = (*pstate).pars.par2[2]
+  pararr[q].value *= 1d3
+  pararr[q].limits *= 1d3
+  q++ 
  endif;FITPLANET2 CHECKED
  
  if (*pstate).fitplarr[2] then begin
   pararr[q] = (*pstate).pars.par3[0] & q++
   pararr[q] = (*pstate).pars.par3[4] & q++
-  pararr[q] = (*pstate).pars.par3[2] & q++
+  pararr[q] = (*pstate).pars.par3[2]
+  pararr[q].value *= 1d3
+  pararr[q].limits *= 1d3
+  q++ 
  endif;FITPLANET3 CHECKED
  
  if (*pstate).fitplarr[3] then begin
   pararr[q] = (*pstate).pars.par4[0] & q++
   pararr[q] = (*pstate).pars.par4[4] & q++
-  pararr[q] = (*pstate).pars.par4[2] & q++
+  pararr[q] = (*pstate).pars.par4[2]
+  pararr[q].value *= 1d3
+  pararr[q].limits *= 1d3
+  q++   
  endif;FITPLANET4 CHECKED
  
  if (*pstate).fitplarr[4] then begin
   pararr[q] = (*pstate).pars.par5[0] & q++
   pararr[q] = (*pstate).pars.par5[4] & q++
-  pararr[q] = (*pstate).pars.par5[2] & q++
+  pararr[q] = (*pstate).pars.par5[2]
+  pararr[q].value *= 1d3
+  pararr[q].limits *= 1d3
+  q++ 
  endif;FITPLANET5 CHECKED
  
  if (*pstate).fitplarr[5] then begin
   pararr[q] = (*pstate).pars.par6[0] & q++
   pararr[q] = (*pstate).pars.par6[4] & q++
-  pararr[q] = (*pstate).pars.par6[2] & q++
+  pararr[q] = (*pstate).pars.par6[2]
+  pararr[q].value *= 1d3
+  pararr[q].limits *= 1d3
+  q++ 
  endif;FITPLANET6 CHECKED
  
  if (*pstate).fitplarr[6] then begin
   pararr[q] = (*pstate).pars.par7[0] & q++
   pararr[q] = (*pstate).pars.par7[4] & q++
-  pararr[q] = (*pstate).pars.par7[2] & q++
+  pararr[q] = (*pstate).pars.par7[2]
+  pararr[q].value *= 1d3
+  pararr[q].limits *= 1d3
+  q++ 
  endif;FITPLANET7 CHECKED
  
  ;Now for the trends and offsets

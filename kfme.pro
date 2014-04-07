@@ -9663,6 +9663,7 @@ pro kfme_bmc_xcld, pstate
   print, 'Now excluding realizations'
  
   newoutarr = (*(*pstate).bootmc.pbmc_newoutarr)
+  n_planets = (*(*pstate).pfunctargs).n_planets
   chiarr = (*(*pstate).bootmc.pbmc_chiarr)
   ;use the size of newoutarr to create a new array 
   ;excluding the outlying elements:

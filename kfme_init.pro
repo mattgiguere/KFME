@@ -25,7 +25,7 @@ winoffx = winoffx, $
 winoffy = winoffy
 
 ;ROOTDIR: This will prefix the kfmedir, outputdir and starlist:
-spawn, 'echo $home', mdir
+spawn, 'echo $HOME', mdir
 rdir = mdir+'/'
 
 ;KFMEDIR: The directory that contains all the KFME IDL procedures

@@ -3,6 +3,12 @@ Pro   PS_Open, filename, $
 		COLOR=color, $
 		THICK=thick, $
 		PS_FONTS=ps_fonts, $
+		SCALE_FACTOR = SCALE_FACTOR, $
+		inches = inches, $
+		XOFFSET = XOFFSET, $
+		inxsize=inxsize, $
+		YOFFSET = YOFFSET, $		
+		inysize=inysize, $
 		ENCAPSULATED=encapsulated, $
 		ADOBESTANDARD=adobe, $
 		HELP=help
@@ -84,6 +90,10 @@ SccsId = '@(#)ps_open.pro 25 Jan 1995 2.4 Fen Tamanaha'
 ;			device and its variables can be restored and the
 ;			output file closed.
 ;
+;  inxsize: change the xsize of the plot.  ~MJG
+;
+;  inysize: change the ysize of the plot. ~MJG
+;
 ; SIDE EFFECTS:
 ;	The plotting device is changed to PostScript until PS_CLOSE is
 ;	called.
@@ -135,6 +145,7 @@ SccsId = '@(#)ps_open.pro 25 Jan 1995 2.4 Fen Tamanaha'
 ;			/AdobeStandard keyword added.
 ;	940805 Fen - Cleaned up handling of color tables.
 ;	950125 Fen - Fixed /Portrait keyword.
+;	110208 MJG - Added x & y size keywords
 ;-
 
     Common 	fen_ps_common, orig_device, ps_file, $
@@ -208,9 +219,9 @@ SccsId = '@(#)ps_open.pro 25 Jan 1995 2.4 Fen Tamanaha'
     EndIf Else Begin
 	Set_Plot, 'PS'
     EndElse
-    Device, File=ps_file
+    Device, File=ps_file, $
+    scale_factor = keyword_set(scale_factor)
     Device, Color=Keyword_Set(color)
-
 ;
 ; The bits per pixel in
 ;	the color map are maximized at 8.  This avoids the image size
@@ -286,6 +297,10 @@ SccsId = '@(#)ps_open.pro 25 Jan 1995 2.4 Fen Tamanaha'
 	Device, /Landscape
     EndElse
 
+;change the size. Added February 8, 2011 ~MJG
+if keyword_set(inxsize) then xsize=inxsize
+if keyword_set(inysize) then ysize=inysize
+
 ;
 ; If the output is encapsulated PostScript, then the offsets are
 ;	unimportant.  The inclusion macros used to insert the
@@ -301,8 +316,11 @@ SccsId = '@(#)ps_open.pro 25 Jan 1995 2.4 Fen Tamanaha'
 	yoff = 0.0
 	Device, /Portrait
     EndIf
-
-    Device, /Inches, XOffSet=xoff, YOffSet=yoff, XSize=xsize, YSize=ysize
+    if keyword_set(xoffset) then xoff = xoffset
+    if keyword_set(yoffset) then yoff = yoffset
+    print, 'xsize is: ', xsize
+    print, 'ysize is: ', ysize
+    Device, /Inches, XOffSet=xoff, YOffSet=yoff, XSize=xsize, YSize=ysize, scale_factor=1d
 
     Return
 End

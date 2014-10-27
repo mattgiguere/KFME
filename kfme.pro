@@ -2222,7 +2222,9 @@ pro kfme_fap, event
 	m_star = (*(*pstate).pfunctargs).m_star
 	inc = 89.9d
   
-  orbel=dblarr(7)
+orbel=dblarr(7)
+fixed_in_arr=dblarr(7)
+  
 ;  orbel[7*indx] = orbpar[indx*5] ;p
 ;  orbel[7*indx+1] = orbpar[5*indx+4] ;tp
 ;  orbel[7*indx+2] = orbpar[5*indx+2] ;e
@@ -2237,6 +2239,11 @@ pro kfme_fap, event
 	orbel[1] = pararr[5*indx + 4L].value ;tp
 	orbel[2] = pararr[5*indx + 2L].value ;e
 	orbel[3] = pararr[5*indx + 3L].value ;om
+	
+	fixed_in_arr[0] = pararr[5*indx + 0L].fixed ;p
+	fixed_in_arr[1] = pararr[5*indx + 4L].fixed ;tp
+	fixed_in_arr[2] = pararr[5*indx + 2L].fixed ;e
+	fixed_in_arr[3] = pararr[5*indx + 3L].fixed ;om
 	
 	period=pararr[indx*5].value
 	a_pl=((period/365.2564d)^2*m_star)^(1./3.)
@@ -2259,6 +2266,11 @@ pro kfme_fap, event
 	orbel[2] = pararr[5*indx + 2L].value ;e
 	orbel[3] = pararr[5*indx + 3L].value ;om
 	
+	fixed_in_arr[0] = pararr[5*indx + 0L].fixed ;p
+	fixed_in_arr[1] = pararr[5*indx + 4L].fixed ;tp
+	fixed_in_arr[2] = pararr[5*indx + 2L].fixed ;e
+	fixed_in_arr[3] = pararr[5*indx + 3L].fixed ;om
+	
 	period=pararr[indx*5].value
 	a_pl=((period/365.2564d)^2*m_star)^(1./3.)
 	m_pl_earth = pararr[indx*5+1].value
@@ -2278,6 +2290,11 @@ pro kfme_fap, event
 	orbel[1] = pararr[5*indx + 4L].value ;tp
 	orbel[2] = pararr[5*indx + 2L].value ;e
 	orbel[3] = pararr[5*indx + 3L].value ;om
+	
+	fixed_in_arr[0] = pararr[5*indx + 0L].fixed ;p
+	fixed_in_arr[1] = pararr[5*indx + 4L].fixed ;tp
+	fixed_in_arr[2] = pararr[5*indx + 2L].fixed ;e
+	fixed_in_arr[3] = pararr[5*indx + 3L].fixed ;om
 	
 	period=pararr[indx*5].value
 	a_pl=((period/365.2564d)^2*m_star)^(1./3.)
@@ -2299,6 +2316,11 @@ pro kfme_fap, event
 	orbel[2] = pararr[5*indx + 2L].value ;e
 	orbel[3] = pararr[5*indx + 3L].value ;om
 	
+	fixed_in_arr[0] = pararr[5*indx + 0L].fixed ;p
+	fixed_in_arr[1] = pararr[5*indx + 4L].fixed ;tp
+	fixed_in_arr[2] = pararr[5*indx + 2L].fixed ;e
+	fixed_in_arr[3] = pararr[5*indx + 3L].fixed ;om
+	
 	period=pararr[indx*5].value
 	a_pl=((period/365.2564d)^2*m_star)^(1./3.)
 	m_pl_earth = pararr[indx*5+1].value
@@ -2318,6 +2340,11 @@ pro kfme_fap, event
 	orbel[1] = pararr[5*indx + 4L].value ;tp
 	orbel[2] = pararr[5*indx + 2L].value ;e
 	orbel[3] = pararr[5*indx + 3L].value ;om
+	
+	fixed_in_arr[0] = pararr[5*indx + 0L].fixed ;p
+	fixed_in_arr[1] = pararr[5*indx + 4L].fixed ;tp
+	fixed_in_arr[2] = pararr[5*indx + 2L].fixed ;e
+	fixed_in_arr[3] = pararr[5*indx + 3L].fixed ;om
 	
 	period=pararr[indx*5].value
 	a_pl=((period/365.2564d)^2*m_star)^(1./3.)
@@ -2339,6 +2366,11 @@ pro kfme_fap, event
 	orbel[2] = pararr[5*indx + 2L].value ;e
 	orbel[3] = pararr[5*indx + 3L].value ;om
 	
+	fixed_in_arr[0] = pararr[5*indx + 0L].fixed ;p
+	fixed_in_arr[1] = pararr[5*indx + 4L].fixed ;tp
+	fixed_in_arr[2] = pararr[5*indx + 2L].fixed ;e
+	fixed_in_arr[3] = pararr[5*indx + 3L].fixed ;om
+	
 	period=pararr[indx*5].value
 	a_pl=((period/365.2564d)^2*m_star)^(1./3.)
 	m_pl_earth = pararr[indx*5+1].value
@@ -2358,6 +2390,11 @@ pro kfme_fap, event
 	orbel[1] = pararr[5*indx + 4L].value ;tp
 	orbel[2] = pararr[5*indx + 2L].value ;e
 	orbel[3] = pararr[5*indx + 3L].value ;om
+	
+	fixed_in_arr[0] = pararr[5*indx + 0L].fixed ;p
+	fixed_in_arr[1] = pararr[5*indx + 4L].fixed ;tp
+	fixed_in_arr[2] = pararr[5*indx + 2L].fixed ;e
+	fixed_in_arr[3] = pararr[5*indx + 3L].fixed ;om
 	
 	period=pararr[indx*5].value
 	a_pl=((period/365.2564d)^2*m_star)^(1./3.)
@@ -2407,12 +2444,11 @@ pro kfme_fap, event
   oplot, cfalone.jd, cfalone.mnvel - fitrv2, ps=8, color=240
   print, 'the planet alone - best fit ', $
   		 '(i.e. the residuals) are in red. '
-;  stop
-  
+
   orbel=rv_fit_mp(cfalone.jd,cfalone.mnvel, cfalone.errvel, $
 				yfit=syn_fit,tps=max(cffull.jd), $
 				chi=chi_sq,rms=rms, /plotfit, $
-				orbel=orbel)
+				orbel=orbel, fixed=fixed_in_arr)
 
 ;  stop
   chi_init = chi_sq
@@ -2442,7 +2478,7 @@ pro kfme_fap, event
 	  endfor
 	  orbel=rv_fit_mp(scramjd,scrammnvel, scramerrvel, $
 			  yfit=syn_fit,tps=max(cffull.jd), $
-			  chi=chi,rms=rms, /quiet)
+			  chi=chi,rms=rms, fixed=fixed_in_arr, /quiet)
 		;stop	  
       chiarr[j] = chi^2
 	  

@@ -10897,7 +10897,7 @@ pro kfme
 
  lowpergtext = widget_text(lowperg, value = 'LOW_LIM:', xsize = 15)
  
- lowpergval = widget_text(lowperg, value = strt(0.75), $
+ lowpergval = widget_text(lowperg, value = strt(0.5), $
  	/editable, event_pro = 'kfme_lowperg', xsize = '15')
 
  hiperg = widget_base(controlbase, /row)

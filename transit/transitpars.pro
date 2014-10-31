@@ -128,16 +128,17 @@ if hixct gt 0 then rho[hix] = 1326d ;kg m^-3
 
 jupx = where(msini gt 200d, jupxct)
 
-msini *= M_earth
+msinikg = msini * M_earth
 r_pl = (3d / (4d * !dpi) * msini / rho)^(1d / 3d)
 r_pl /= r_sun
 
 if jupxct gt 0 then r_pl[jupx] = 0.1d ;the radius of jupiter
 
-M_star *= M_sun
+
+M_starkg = M_star * M_sun
 
 R_tot = (R_pl + R_star)*R_sun
-M_tot = M_star + msini
+M_tot = M_starkg + msinikg
 psec = per * 24d * 3600d
 Gcon = 6.67d-11; N m^2 / kg^2
 a_maj = ( (psec / (2d * !dpi) )^2d * Gcon * M_tot)^(1d / 3d)

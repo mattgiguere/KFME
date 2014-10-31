@@ -9800,7 +9800,6 @@ pererr=strcompress(string(stdev(newoutarr[i*7 + 0,*])),/remove_all)
 
 massarr = mpf_mass(newoutarr[i*7 + 0,*], m_star_arr, newoutarr[i*7 + 4,*], $
             newoutarr[i*7 + 2,*], inc)
-
 medianmass=strcompress(string(median(massarr)),/remove_all)
 masserr=strcompress(string(stdev(massarr)),/remove_all)
 

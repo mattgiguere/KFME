@@ -9691,7 +9691,6 @@ end;kfme_bmc_niter.pro
   print, 'Exclude Bootstrap MC Realizations?', event.select
   ;change the bmc_xcld value:
   (*pstate).bootmc.bmc_xcld = event.select
-  kfme_bmc_xcld, pstate
 end;kfme_bmc_xcld_set.pro
 
 pro kfme_bmc_xcld, pstate
@@ -9752,7 +9751,7 @@ pro kfme_bmc_xcld, pstate
   endfor;loop through planets
   
   ;make sure a limit was set if "exclude realizations was selected:
-  if size(nes, /type) eq 0 then begin
+  if (size(nes, /type) eq 0 or nes eq 0) then begin
     print, '*** *** *** **** ***** ERROR! ***** **** *** *** ***'
   	print, 'You need to either choose a low limit or high limit'
   	print, 'for one of the parameters in order to exclue permutations!'
@@ -9768,11 +9767,11 @@ pro kfme_bmc_xcld, pstate
 	(*(*pstate).bootmc.pbmc_xchiarr) = ptr_new(newchiarr, /no_copy, /alloc)
 	print, 'Number of realizations discarded: ', sznoa[2]-nes
 	print, 'Fraction of realizations remaining: ', double(nes)/sznoa[2]
+  
+    kfme_bmc_printpars, pstate
+    kfme_bmc_plot, pstate
   endelse;excluded properly
   endif;xcld=1
-  
-  kfme_bmc_printpars, pstate
-  kfme_bmc_plot, pstate
 end;kfme_bmc_xcld.pro
 
 pro kfme_bmc_printpars, pstate

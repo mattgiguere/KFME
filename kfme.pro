@@ -9750,17 +9750,25 @@ pro kfme_bmc_xcld, pstate
 			(*pstate).bootmc.bmc_ksahilim, nes)
 	endif;ksahilim
   endfor;loop through planets
-  ;create a new array that will have only the good values:
-  neweroutarr = dblarr(sznoa[1], nes)
-  ;now save the good elements into new arrays:
-  neweroutarr = newoutarr[*,gdels]
-  newchiarr = chiarr[gdels]
+  
+  ;make sure a limit was set if "exclude realizations was selected:
+  if size(nes, /type) eq 0 then begin
+    print, '*** *** *** **** ***** ERROR! ***** **** *** *** ***'
+  	print, 'You need to either choose a low limit or high limit'
+  	print, 'for one of the parameters in order to exclue permutations!'
+  endif else begin
+	;create a new array that will have only the good values:
+	neweroutarr = dblarr(sznoa[1], nes)
+	;now save the good elements into new arrays:
+	neweroutarr = newoutarr[*,gdels]
+	newchiarr = chiarr[gdels]
  
-  ;finally make them pointers and save them to the structure
-  (*(*pstate).bootmc.pbmc_xnewoutarr) = ptr_new(neweroutarr, /no_copy, /alloc)
-  (*(*pstate).bootmc.pbmc_xchiarr) = ptr_new(newchiarr, /no_copy, /alloc)
-  print, 'Number of realizations discarded: ', sznoa[2]-nes
-  print, 'Fraction of realizations remaining: ', double(nes)/sznoa[2]
+	;finally make them pointers and save them to the structure
+	(*(*pstate).bootmc.pbmc_xnewoutarr) = ptr_new(neweroutarr, /no_copy, /alloc)
+	(*(*pstate).bootmc.pbmc_xchiarr) = ptr_new(newchiarr, /no_copy, /alloc)
+	print, 'Number of realizations discarded: ', sznoa[2]-nes
+	print, 'Fraction of realizations remaining: ', double(nes)/sznoa[2]
+  endelse;excluded properly
   endif;xcld=1
   
   kfme_bmc_printpars, pstate

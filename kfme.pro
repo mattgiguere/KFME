@@ -4755,8 +4755,17 @@ pro kfme_errcutnum, event
   widget_control, event.top, get_uvalue=pstate
   
   if double(newpar) lt (*pstate).errcut then begin
+  	;if the new errcut is less than the old errcut, 
+  	;simply cut the velocities down more:
+  	cf = (*(*pstate).pcf).cf_rv
+  	x = where(cf.errvel lt newpar)
+  	(*(*pstate).pcf) = cf[x]
+  endif else begin
+  	;if the new errcut is greater than the old 
+  	;errcut, we need to restore the original
+  	;data structure again.
   
-  endif
+  endelse
 
   ;change the errcut value:
   (*pstate).errcut = double(newpar)

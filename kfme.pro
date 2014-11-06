@@ -4762,7 +4762,7 @@ pro kfme_errcutnum, event
 		;if the new errcut is greater than the old 
 		;errcut, we need to restore the original
 		;data structure again.
-		kfme_restore_keck, (*(*pstate.pcfname), pstate
+		kfme_restore_keck, (*(*pstate.pcfname)), pstate
 	endif
 
 	;cut the cf structure to only elements that

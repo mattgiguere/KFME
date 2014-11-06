@@ -11099,8 +11099,7 @@ tfinebutton = widget_button(tfinebase, $
  errcutbuttn = widget_button(errcutrow, value = 'errcut', $
    event_pro = 'kfme_errcutnum', xsize=halfcol)
    
- errcutnum = 5d
- previouserrcut = 5d
+ errcutnum = -1d
  errcutbox = widget_text(errcutrow, value = strt(errcutnum), $
  	/editable, event_pro = 'kfme_errcutnum', xsize = halfcol)
 

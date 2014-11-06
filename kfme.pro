@@ -641,6 +641,8 @@ pro kfme_update_fields, pstate
   widget_control, (*pstate).controlbar.jitterbox, $
   set_value = strt((*pstate).jitternum)
   
+  widget_control, (*pstate).controlbar.errcutbox, $
+  set_value = strt((*pstate).errcut)
   
   ;UPDATE THE TEXT AND SLIDER FIELDS WITH NEW PARS:
   ;PLANET 1:
@@ -1432,6 +1434,7 @@ pro kfme_restoreall, event
  			 dew24:state.dew24, $
  			 dew39:state.dew39, $
  			 draw:(*pstate).draw, $
+ 			 errcut:state.errcut, $
  			 fapiter:state.fapiter, $
  			 fixbttns:(*pstate).fixbttns, $
  			 fitplarr:state.fitplarr, $
@@ -3650,6 +3653,7 @@ pro kfme_restoreresid, event
  			 dew24:state.dew24, $
  			 dew39:state.dew39, $
  			 draw:(*pstate).draw, $
+ 			 errcut:state.errcut, $
  			 fapiter:state.fapiter, $
  			 fixbttns:(*pstate).fixbttns, $
  			 fitplarr:state.fitplarr, $
@@ -4750,29 +4754,29 @@ pro kfme_jitternum, event
 end;kfme_jitternum.pro
 
 pro kfme_errcutnum, event
-  ;Retrieve the pointer to the state structure:
-  widget_control, event.id, get_value=newpar
-  widget_control, event.top, get_uvalue=pstate
-  
-  if double(newpar) lt (*pstate).errcut then begin
-  	;if the new errcut is less than the old errcut, 
-  	;simply cut the velocities down more:
-  	cf = (*(*pstate).pcf).cf_rv
-  	x = where(cf.errvel lt newpar)
-  	(*(*pstate).pcf) = cf[x]
-  endif else begin
-  	;if the new errcut is greater than the old 
-  	;errcut, we need to restore the original
-  	;data structure again.
-  
-  endelse
+	;Retrieve the pointer to the state structure:
+	widget_control, event.id, get_value=newpar
+	widget_control, event.top, get_uvalue=pstate
 
-  ;change the errcut value:
-  (*pstate).errcut = double(newpar)
-  
-  print, 'Data cut at an error of: ', newpar
-  print, 'the current average err: ', avg((*(*pstate).pcf).cf_rv.errvel)
-  ;stop
+	if double(newpar) gt (*pstate).errcut then begin
+		;if the new errcut is greater than the old 
+		;errcut, we need to restore the original
+		;data structure again.
+		kfme_restore_keck, (*(*pstate.pcfname), pstate
+	endif
+
+	;cut the cf structure to only elements that
+	;have an errcut less than the input value:
+	cf = (*(*pstate).pcf).cf_rv
+	x = where(cf.errvel lt newpar)
+	(*(*pstate).pcf) = cf[x]
+
+	;update the errcut value:
+	(*pstate).errcut = double(newpar)
+
+	print, 'Data cut at an error of: ', newpar
+	print, 'the current average err: ', avg((*(*pstate).pcf).cf_rv.errvel)
+	;stop
 end;kfme_errcutnum.pro
 
 pro kfme_debug, event
@@ -11093,8 +11097,8 @@ tfinebutton = widget_button(tfinebase, $
  errcutbuttn = widget_button(errcutrow, value = 'errcut', $
    event_pro = 'kfme_adderrcut', xsize=halfcol)
    
- errcutnum = 0d
- previouserrcut = 0d
+ errcutnum = 5d
+ previouserrcut = 5d
  errcutbox = widget_text(errcutrow, value = strt(errcutnum), $
  	/editable, event_pro = 'kfme_errcutnum', xsize = halfcol)
 
@@ -13958,6 +13962,7 @@ bootmc = {bmc_xcld:bmc_xcld, $
 				sradiusval:sradiusval, $
 				sradiusuncval:sradiusuncval, $
  			   jitterbox:jitterbox, $
+ 			   errcutbox:errcutbox, $
             psplotbutton:psplotbutton, $
             zoomslide:zoomslide, $
             scrollslide:scrollslide, $
@@ -13981,6 +13986,7 @@ bootmc = {bmc_xcld:bmc_xcld, $
  			 dew24:dew24, $
  			 dew39:dew39, $
  			 draw:draw, $
+ 			 errcut:errcut, $
  			 fapiter:fapiter, $
  			 fixbttns:fixbttns, $
  			 fitplarr:fitplarr, $

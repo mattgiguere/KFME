@@ -11096,12 +11096,27 @@ tfinebutton = widget_button(tfinebase, $
 
  errcutrow = widget_base(controlbase, /row)
 
- errcutbuttn = widget_button(errcutrow, value = 'errcut', $
-   event_pro = 'kfme_errcutnum', xsize=halfcol)
-   
+ errcuttext = widget_text(errcutrow, value = 'errcut:', xsize = 15)
+
  errcutnum = -1d
  errcutbox = widget_text(errcutrow, value = strt(errcutnum), $
  	/editable, event_pro = 'kfme_errcutnum', xsize = halfcol)
+
+ mindatecutrow = widget_base(controlbase, /row)
+
+ mindatecuttext = widget_text(mindatecutrow, value = 'min(yymmdd):', xsize = 15)
+
+ mindatecutnum = -1d
+ mindatecutbox = widget_text(mindatecutrow, value = strt(mindatecutnum), $
+ 	/editable, event_pro = 'kfme_mindatecutnum', xsize = halfcol)
+
+ maxdatecutrow = widget_base(controlbase, /row)
+
+ maxdatecuttext = widget_text(mindatecutrow, value = 'max(yymmdd):', xsize = 15)
+
+ maxdatecutnum = -1d
+ maxdatecutbox = widget_text(maxdatecutrow, value = strt(maxdatecutnum), $
+ 	/editable, event_pro = 'kfme_maxdatecutnum', xsize = halfcol)
 
  ;Make a droplist to hold line style choices:
  symbols = ['SYMBOL', 'Plus', 'Asterisk', 'Period', 'Diamond', $

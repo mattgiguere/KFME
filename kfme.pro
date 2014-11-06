@@ -4749,6 +4749,22 @@ pro kfme_jitternum, event
   ;stop
 end;kfme_jitternum.pro
 
+pro kfme_errcutnum, event
+  ;Retrieve the pointer to the state structure:
+  widget_control, event.id, get_value=newpar
+  widget_control, event.top, get_uvalue=pstate
+  
+  if double(newpar) lt (*pstate).errcut then begin
+  
+  endif
+
+  ;change the errcut value:
+  (*pstate).errcut = double(newpar)
+  
+  print, 'Data cut at an error of: ', newpar
+  print, 'the current average err: ', avg((*(*pstate).pcf).cf_rv.errvel)
+  ;stop
+end;kfme_errcutnum.pro
 
 pro kfme_debug, event
  ; Get the pointer to the state structure from the user value
@@ -10727,7 +10743,7 @@ pro kfme
 ;endif
  
  ;make the top level base and add resize events:
- tlb = widget_base(title = 'Interactive KFME v. 2014/03/30 ', $
+ tlb = widget_base(title = 'Interactive KFME v. 2014/11/06 ', $
  /col, xoff = x_offset, yoff = y_offset, /tlb_size_events)
  
  ;Create the top row to house the plot & buttons:
@@ -11062,6 +11078,16 @@ tfinebutton = widget_button(tfinebase, $
  previousjitter = 0d
  jitterbox = widget_text(jitterrow, value = strt(jitternum), $
  	/editable, event_pro = 'kfme_jitternum', xsize = halfcol)
+
+ errcutrow = widget_base(controlbase, /row)
+
+ errcutbuttn = widget_button(errcutrow, value = 'errcut', $
+   event_pro = 'kfme_adderrcut', xsize=halfcol)
+   
+ errcutnum = 0d
+ previouserrcut = 0d
+ errcutbox = widget_text(errcutrow, value = strt(errcutnum), $
+ 	/editable, event_pro = 'kfme_errcutnum', xsize = halfcol)
 
  ;Make a droplist to hold line style choices:
  symbols = ['SYMBOL', 'Plus', 'Asterisk', 'Period', 'Diamond', $

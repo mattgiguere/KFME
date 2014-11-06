@@ -13986,7 +13986,7 @@ bootmc = {bmc_xcld:bmc_xcld, $
  			 dew24:dew24, $
  			 dew39:dew39, $
  			 draw:draw, $
- 			 errcut:errcut, $
+ 			 errcut:errcutnum, $
  			 fapiter:fapiter, $
  			 fixbttns:fixbttns, $
  			 fitplarr:fitplarr, $

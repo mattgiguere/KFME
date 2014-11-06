@@ -4768,8 +4768,10 @@ pro kfme_errcutnum, event
 	;cut the cf structure to only elements that
 	;have an errcut less than the input value:
 	cf = (*(*pstate).pcf).cf_rv
-	x = where(cf.errvel lt newpar)
-	(*(*pstate).pcf) = cf[x]
+	print, 'There were : ', strt(n_elements(cf)), ' elements.'
+	x = where(cf.errvel lt newpar[0])
+	(*(*pstate).pcf).cf_rv = cf[x]
+	print, 'There are now: ', strt(n_elements(x)), ' elements.'
 
 	;update the errcut value:
 	(*pstate).errcut = double(newpar)
@@ -11095,7 +11097,7 @@ tfinebutton = widget_button(tfinebase, $
  errcutrow = widget_base(controlbase, /row)
 
  errcutbuttn = widget_button(errcutrow, value = 'errcut', $
-   event_pro = 'kfme_adderrcut', xsize=halfcol)
+   event_pro = 'kfme_errcutnum', xsize=halfcol)
    
  errcutnum = 5d
  previouserrcut = 5d

@@ -4785,7 +4785,7 @@ pro kfme_errcutnum, event
 	;stop
 end;kfme_errcutnum.pro
 
-pro kfme_errcutnum, event
+pro kfme_mindatecut, event
 	;Retrieve the pointer to the state structure:
 	widget_control, event.id, get_value=newpar
 	widget_control, event.top, get_uvalue=pstate
@@ -4806,7 +4806,7 @@ pro kfme_errcutnum, event
 	print, 'Data cut at an error of: ', newpar
 	print, 'the current average err: ', avg((*(*pstate).pcf).cf_rv.errvel)
 	;stop
-end;kfme_errcutnum.pro
+end;kfme_mindatecut.pro
 
 pro kfme_debug, event
  ; Get the pointer to the state structure from the user value
@@ -13992,7 +13992,7 @@ bootmc = {bmc_xcld:bmc_xcld, $
  ;Widgets in the Control Bar:
  
  controlbar = { aloneplanet:aloneplanet, $
-				connectbutton:connectbutton
+				connectbutton:connectbutton, $
 				datname:datname, $
   			    errcutbox:errcutbox, $
  			    jitterbox:jitterbox, $

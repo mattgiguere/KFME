@@ -1447,6 +1447,8 @@ pro kfme_restoreall, event
  			 jitternum:state.jitternum, $
  			 kfmedir:state.kfmedir, $
  			 linestyle:state.linestyle, $
+ 			 maxdatecutnum:state.maxdatecutnum, $
+ 			 mindatecutnum:state.mindatecutnum, $
  			 multith:state.multith, $
  			 outputdir:state.outputdir, $
  			 p_orig:state.p_orig, $
@@ -3666,6 +3668,8 @@ pro kfme_restoreresid, event
  			 jitternum:state.jitternum, $
  			 kfmedir:state.kfmedir, $
  			 linestyle:state.linestyle, $
+ 			 maxdatecutnum:state.maxdatecutnum, $
+ 			 mindatecutnum:state.mindatecutnum, $
  			 multith:state.multith, $
  			 outputdir:state.outputdir, $
  			 p_orig:state.p_orig, $
@@ -4764,6 +4768,29 @@ pro kfme_errcutnum, event
 		;data structure again.
 		kfme_restore_keck, (*(*pstate.pcfname)), pstate
 	endif
+
+	;cut the cf structure to only elements that
+	;have an errcut less than the input value:
+	cf = (*(*pstate).pcf).cf_rv
+	print, 'There were : ', strt(n_elements(cf)), ' elements.'
+	x = where(cf.errvel lt newpar[0])
+	(*(*pstate).pcf).cf_rv = cf[x]
+	print, 'There are now: ', strt(n_elements(x)), ' elements.'
+
+	;update the errcut value:
+	(*pstate).errcut = double(newpar)
+
+	print, 'Data cut at an error of: ', newpar
+	print, 'the current average err: ', avg((*(*pstate).pcf).cf_rv.errvel)
+	;stop
+end;kfme_errcutnum.pro
+
+pro kfme_errcutnum, event
+	;Retrieve the pointer to the state structure:
+	widget_control, event.id, get_value=newpar
+	widget_control, event.top, get_uvalue=pstate
+
+	kfme_restore_keck, (*(*pstate.pcfname)), pstate
 
 	;cut the cf structure to only elements that
 	;have an errcut less than the input value:
@@ -13965,27 +13992,29 @@ bootmc = {bmc_xcld:bmc_xcld, $
  ;Widgets in the Control Bar:
  
  controlbar = { aloneplanet:aloneplanet, $
-				plalnumbox:plalnumbox, $
+				connectbutton:connectbutton
+				datname:datname, $
+  			    errcutbox:errcutbox, $
+ 			    jitterbox:jitterbox, $
+ 			    mindatecutbox:mindatecutbox, $
+ 			    maxdatecutbox:maxdatecutbox, $
+				multithbutton:multithbutton, $
 				phasebool:phasebool, $
 				phasebutton:phasebutton, $
 				phasestart:phasestart, $
-				datname:datname, $
-				yranbutton:yranbutton, $
+				plalnumbox:plalnumbox, $
+				psplotbutton:psplotbutton, $
+				scrollslide:scrollslide, $
+				smassuncval:smassuncval, $
+				smassval: smassval, $
+				sradiusuncval:sradiusuncval, $
+				sradiusval:sradiusval, $
+				togerrbutton:togerrbutton, $
 				ymaxval:ymaxval, $
 				yminval:yminval, $
-				smassval: smassval, $
-				smassuncval:smassuncval, $
-				sradiusval:sradiusval, $
-				sradiusuncval:sradiusuncval, $
- 			   jitterbox:jitterbox, $
- 			   errcutbox:errcutbox, $
-            psplotbutton:psplotbutton, $
-            zoomslide:zoomslide, $
-            scrollslide:scrollslide, $
-            ;zoomrvslide:zoomrvslide, $
-            multithbutton:multithbutton, $
-            togerrbutton:togerrbutton, $
-            connectbutton:connectbutton}
+				yranbutton:yranbutton, $
+				;zoomrvslide:zoomrvslide, $
+				zoomslide:zoomslide}
  
 
  ;Create a structure of data for the application:
@@ -14015,6 +14044,8 @@ bootmc = {bmc_xcld:bmc_xcld, $
  			 jitternum:jitternum, $
  			 kfmedir:kfmedir, $
  			 linestyle:0, $
+ 			 maxdatecutnum:maxdatecutnum, $
+ 			 mindatecutnum:mindatecutnum, $
  			 multith:multith, $
  			 outputdir:outputdir, $
  			 p_orig:p_orig, $

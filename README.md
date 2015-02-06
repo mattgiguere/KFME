@@ -81,6 +81,21 @@ ln -s /Users/matt/projects/KFME/idlkfme idlkfme
 Now that your `idlkfme` script is setup, simply type `idlkfme` at the command line and it should startup IDL in the KFME environment.
 
 ####Using KFME
-Now that you are in IDL, simply type `kfme` to start up KFME. If all goes well you should see the KFME GUI pop up  and it should look similar to the below image:
+Now that you are in IDL, simply type `kfme` and the IDL command line to start up KFME. If all goes well you should see the KFME GUI pop up  and it should look similar to the below image:
 
 ![KFME Startup GUI](https://github.com/mattgiguere/KFME/blob/master/images/KFME_Startup.png)
+
+The default RV time series displayed is for Upsilon Andromeda. To open a new data set into KFME there are two options:
+
+1. - Put the data into a CPS formatted CF3 IDL structure that is contained within an IDL save file
+   - Click the "Open Data" button in the top right corner of the KFME GUI
+   - Find the file in the dialog widget that pops up after clicking the "Open Data" button
+   - Either double-click the filename, or highlight it and click the "OK" button in the bottom left
+
+   ![KFME Import Data](https://github.com/mattgiguere/KFME/blob/master/images/KFME_Data_Import.png)
+
+
+2. - Put the data into a delimited text file where the first three columns contain the observation times, the RV measurements, and the single measurement uncertainties
+   - Specify the delimiter in the red circled field shown in the above figure. The default is a comma
+   - Specify the number of columns in the blue circled field shown in the above figure
+   - Type in the offset from JD in the green circled field in the above figure. For example, if your time series is in JD - 2.44e6, enter 2.44d6 in this field).

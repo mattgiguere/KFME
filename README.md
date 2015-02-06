@@ -24,14 +24,13 @@ KFME is open source, and the source code can be forked from github at
 Additional documentation on how to setup and use KFME can be found at
 [https://sites.google.com/site/kfmeasy/](https://sites.google.com/site/kfmeasy/)
 
-###Dependencies
+####Dependencies
 - [IDLAstro](http://idlastro.gsfc.nasa.gov): GitHub repository [here](https://github.com/wlandsman/IDLAstro)
 - [Coyote Library](http://www.idlcoyote.com/documents/programs.php#COYOTE_LIBRARY_DOWNLOAD): One of David Fanning's IDL Libraries.
 - [idlutils](https://github.com/mattgiguere/idlutils): Some IDL utility files
 
-After installing the dependencies, the first thing you'll want to do is modify
-the `idlkfme` csh script that is in the root KFME directory. Here is what it
-looks like:
+####Setting Up an `idlkfme` Shell Startup Script
+This party is optional, but can save a lot of time in the future. There is an executable shell script called `idlkfme` in the root KFME directory. Edit this to point to your versions of KFME, IDLAstro, coyote, and idlutils and it will take care of the pain of dealing with your IDL path in the future when using KFME. Here is what the `idlkfme` shell script looks like:
 
 ```sh
 #!/bin/csh
@@ -67,4 +66,16 @@ echo "Now setting the path to "$IDL_PATH
 echo "Now changing the directory to: "$PROPATH
 cd $PROPATH
 idl
+````
+
+The four lines you should edit are the four lines in the dependencies section (i.e. the lines starting with set KFME_DIR, set IDL_ASTRO, etc.)
+
+
+I like to have all my shell script executables in one place (that is in my shell path), but I also want to make sure I have the latest version of the `idlkfme` shell script, so I created a symbolic link pointing from my ~/Scripts directory to my `idlkfme` script:
+
+```sh
+cd ~/Scripts
+ln -s /Users/matt/projects/KFME/idlkfme idlkfme
 ```
+
+Now that your `idlkfme` script is setup, simply type `idlkfme` at the command line and it should startup IDL in the KFME environment.

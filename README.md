@@ -85,6 +85,8 @@ Now that you are in IDL, simply type `kfme` and the IDL command line to start up
 
 ![KFME Startup GUI](https://github.com/mattgiguere/KFME/blob/master/images/KFME_Startup.png)
 
+#####Importing Data
+
 The default RV time series displayed is for Upsilon Andromeda. To open a new data set into KFME there are two options:
 
 1. - Put the data into a CPS formatted CF3 IDL structure that is contained within an IDL save file
@@ -100,3 +102,13 @@ The default RV time series displayed is for Upsilon Andromeda. To open a new dat
    - Specify the number of rows to skip in the blue circled field shown in the above figure
    - Type in the offset from JD in the green circled field in the above figure. For example, if your time series is in JD - 2.44e6, enter 2.44d6 in this field).
    - The orange and purple fields show the units for the RV measurements and uncertainties, respectively.
+
+#####Periodogram Analysis
+
+Clicking on the "Periodogram" button will generate a Generalized Lomb-Scargle periodogram of the data.
+
+#####False Alarm Probability Analysis
+
+There are two different FAP methods built in to KFME: Periodogram FAP and Keplerian FAP analysis. To generate a periodogram FAP, enter the thresholds you would like to see plotted in the text field to the right of the "FAP Desired" text field.
+
+To perform Keplerian FAP analysis, click the Kep FAP button.

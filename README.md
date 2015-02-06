@@ -79,3 +79,8 @@ ln -s /Users/matt/projects/KFME/idlkfme idlkfme
 ```
 
 Now that your `idlkfme` script is setup, simply type `idlkfme` at the command line and it should startup IDL in the KFME environment.
+
+####Using KFME
+Now that you are in IDL, simply type `kfme` to start up KFME. If all goes well you should see the KFME GUI pop up  and it should look similar to the below image:
+
+![KFME Startup GUI]()

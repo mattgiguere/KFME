@@ -97,5 +97,6 @@ The default RV time series displayed is for Upsilon Andromeda. To open a new dat
 
 2. - Put the data into a delimited text file where the first three columns contain the observation times, the RV measurements, and the single measurement uncertainties
    - Specify the delimiter in the red circled field shown in the above figure. The default is a comma
-   - Specify the number of columns in the blue circled field shown in the above figure
+   - Specify the number of rows to skip in the blue circled field shown in the above figure
    - Type in the offset from JD in the green circled field in the above figure. For example, if your time series is in JD - 2.44e6, enter 2.44d6 in this field).
+   - The orange and purple fields show the units for the RV measurements and uncertainties, respectively.

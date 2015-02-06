@@ -83,4 +83,4 @@ Now that your `idlkfme` script is setup, simply type `idlkfme` at the command li
 ####Using KFME
 Now that you are in IDL, simply type `kfme` to start up KFME. If all goes well you should see the KFME GUI pop up  and it should look similar to the below image:
 
-![KFME Startup GUI]()
+![KFME Startup GUI](https://github.com/mattgiguere/KFME/blob/master/images/KFME_Startup.png)

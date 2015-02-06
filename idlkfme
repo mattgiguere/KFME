@@ -1,0 +1,33 @@
+#!/bin/csh
+
+#########################################################
+#Keplerian Fitting Made Easy Configuration File
+#########################################################
+
+#Dependencies for KFME:
+#1. KFME itself:
+set KFME_DIR = ${HOME}/projects/KFME
+#2. IDLAstro
+set IDL_ASTRO = ${HOME}/projects/IDLAstro
+#3. Coyote Library
+set COYOTE = ${HOME}/projects/coyote
+#4. idlutils
+set IDL_UTILS = ${HOME}/projects/idlutils
+
+
+
+if (-e /Applications/exelis) then
+   set IDL_DIR='/Applications/exelis/idl'
+else
+   set IDL_DIR='/Applications/itt/idl/idl'
+endif
+
+setenv IDL_PATH +${KFME_DIR}:+${IDL_ASTRO}:+${COYOTE}:+${IDL_UTILS}:+${IDL_DIR}/lib
+set PROPATH = ${KFME_DIR}
+
+setenv IDL_STARTUP ${KFME_DIR}/.kfme_idl_startup.pro
+
+echo "Now setting the path to "$IDL_PATH
+echo "Now changing the directory to: "$PROPATH
+cd $PROPATH
+idl
